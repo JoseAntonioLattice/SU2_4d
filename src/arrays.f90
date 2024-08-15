@@ -6,5 +6,5 @@ module arrays
   
   type(SU2), allocatable, dimension(:,:,:,:,:) :: U
   real(dp), allocatable, dimension(:) :: beta
-
+  
 end module arrays
