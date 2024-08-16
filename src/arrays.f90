@@ -6,5 +6,9 @@ module arrays
   
   type(SU2), allocatable, dimension(:,:,:,:,:) :: U
   real(dp), allocatable, dimension(:) :: beta
-  
+  real(dp), allocatable, dimension(:) :: plq_action
+
+  real(dp) :: avr_action,err_action
+  integer(i4) :: bins
+
 end module arrays

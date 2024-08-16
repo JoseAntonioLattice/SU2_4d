@@ -1,4 +1,4 @@
-module periodic_boundary_conditions_mod
+module pbc
 
   use iso_fortran_env, only : i4 => int32
 
@@ -69,4 +69,4 @@ contains
     
   end function im_func
 
-end module periodic_boundary_conditions_mod
+end module pbc

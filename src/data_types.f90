@@ -68,7 +68,7 @@ contains
   pure function tr(U) result(trace)
     type(SU2), intent(in) :: U
     complex(dp) :: trace
-    integer :: i
+    
 
     trace = 2*real(U%matrix(1,1))
 
@@ -78,7 +78,7 @@ contains
     type(SU2), intent(in) :: U
     real(dp) :: det
 
-    det = norm2(u%matrix(1,1))**2 + norm2(u%matrix(1,2))**2
+    det = abs(u%matrix(1,1))**2 + abs(u%matrix(1,2))**2
     
   end function det
   
