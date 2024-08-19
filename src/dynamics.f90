@@ -95,8 +95,8 @@ contains
           x4 = im_func(x,nu) ! x - nu
           x5 = ip_func(x4,mu)! x - nu + mu
 
-          A = A + U(nu,x(1),x(2),x(3),x(4))*U(mu,x2(1),x2(2),x2(3),x2(4))!*dagger(U(nu,x3(1),x3(2),x3(3),x3(4))!+ &
-             !dagger(U(nu,x4(1),x4(2),x4(3),x4(4))*U(mu,x4(1),x4(2),x4(3),x4(4))*U(nu,x5(1),x5(2),x5(3),x5(4))
+          A = A + U(nu,x(1),x(2),x(3),x(4))*U(mu,x2(1),x2(2),x2(3),x2(4))*dagger(U(nu,x3(1),x3(2),x3(3),x3(4)))+ &
+             dagger(U(nu,x4(1),x4(2),x4(3),x4(4)))*U(mu,x4(1),x4(2),x4(3),x4(4))*U(nu,x5(1),x5(2),x5(3),x5(4))
        end if
     end do
   end function staples
@@ -147,6 +147,52 @@ contains
     
   end subroutine heatbath
 
+  subroutine heatbath_creutz(U,x,mu,beta)
+
+    type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
+    integer(i4), intent(in) :: mu, x(4)
+    real(dp), intent(in) :: beta
+    type(SU2) :: sigma,V,Xmat
+    real(dp) :: alpha
+    logical :: condition
+
+    real(dp) :: r(3), lambdasq, s,n(0:3), W(2)
+    complex(dp) :: a,b
+
+    sigma = staples(U,x,mu)
+    alpha = sqrt(det(sigma))
+    
+    V = sigma/alpha
+    
+    condition = .false.
+    do while (condition .eqv. .false.)
+       call random_number(r)
+       r = 1.0_dp - r
+       
+       lambdasq = -1/(2*alpha*beta) * (log(r(1)) + (cos(2*pi*r(2)))**2 * log(r(3)))
+       
+       call random_number(s)
+       if (s**2 <= 1.0_dp - lambdasq) condition = .true.
+    end do
+    n(0) = 1.0_dp - 2*lambdasq
+    
+    call random_number(W)
+    n(1) = 1.0_dp - 2*W(1)
+    n(2) = sqrt(1.0_dp - n(1)**2) * cos(2*pi*W(2))
+    n(3) = sqrt(1.0_dp - n(1)**2) * sin(2*pi*W(2))
+    
+    n(1:3) = sqrt(1.0_dp - n(0)**2) * n(1:3)
+    
+    a = cmplx(n(0),n(1),dp)
+    b = cmplx(n(2),n(3),dp)
+    
+    Xmat%matrix = reshape([a,-conjg(b),b,conjg(a)],[2,2])
+    
+    U(mu,x(1),x(2),x(3),x(4)) = Xmat * V
+    
+  end subroutine heatbath_creutz
+
+  
   subroutine sweeps(u,beta)
 
     type(SU2), dimension(:,:,:,:,:), intent(inout) :: u
@@ -231,7 +277,7 @@ function action(u)
           end do
        end do
     end do
-    action = action / (L**3*Lt)
+    action = action / (2*6*L**3*Lt)
 
   end function action
 
@@ -248,7 +294,7 @@ function action(u)
     x3 = ip_func(x,nu)
 
     plaquette = U(mu,x(1),x(2),x(3),x(4)) * U(nu,x2(1),x2(2),x2(3),x(4)) * &
-          dagger(U(mu,x3(1),x3(2),x3(3),x(4))) * dagger(U(nu,x(1),x(2),x(3),x(4)))
+         dagger(U(mu,x3(1),x3(2),x3(3),x(4))) * dagger(U(nu,x(1),x(2),x(3),x(4)))
 
   end function plaquette
 

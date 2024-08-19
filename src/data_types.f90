@@ -43,7 +43,12 @@ contains
   pure function mat_mul(a,b) result(c)
     type(SU2), intent(in) :: a, b
     type(SU2) :: c
-    c%matrix = matmul(a%matrix,b%matrix)
+    !c%matrix = matmul(a%matrix,b%matrix)
+    c%matrix(1,1) = a%matrix(1,1)*b%matrix(1,1) - a%matrix(1,2)*conjg(b%matrix(1,2))
+    c%matrix(1,2) = a%matrix(1,1)*b%matrix(1,2) + a%matrix(1,2)*conjg(b%matrix(1,1))
+    c%matrix(2,1) = -conjg(c%matrix(1,2))
+    c%matrix(2,2) =  conjg(c%matrix(1,1))
+
   end function mat_mul
 
   pure function mat_divscalar(A,s) result(C)
@@ -70,7 +75,7 @@ contains
     complex(dp) :: trace
     
 
-    trace = 2*real(U%matrix(1,1))
+    trace = U%matrix(1,1) + U%matrix(2,2) 
 
   end function tr
 
