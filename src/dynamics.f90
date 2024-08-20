@@ -48,6 +48,7 @@ contains
           do z = 1, L
              do t = 1, Lt
                 do mu = 1, 4
+                   !call create_unbiased_update(U(mu,x,y,z,t))
                    U(mu,x,y,z,t) = SU2_ran()
                 end do
              end do
@@ -58,22 +59,24 @@ contains
 
   function SU2_ran()
     type(SU2) :: SU2_ran
+    complex(dp) :: a, b
+    real(dp), dimension(0:3) :: r, x
+    real(dp), parameter :: eps = 0.1_dp
+    real(dp) :: norm_r
 
-    real(dp) :: r(4)
-    real(dp), parameter :: eps = 0.5_dp
-    complex(dp) :: a,b
-    
     call random_number(r)
-
     r = r - 0.5_dp
-    r(1:3) = eps * r(1:3)/norm2(r(1:3))
-    r(4) = sign(r(4),r(4)) * sqrt(1.0_dp - eps**2)
+    norm_r = sqrt(r(1)**2 + r(2)**2 + r(3)**2)
 
-    a = cmplx(r(4),r(1),dp)
-    b = cmplx(r(3),r(2),dp)
+    x(1:3) = eps*r(1:3)/norm_r
+    x(0) = sgn(r(0)) * sqrt(1.0_dp - eps**2)
 
-    SU2_ran%matrix = reshape([a,-conjg(b),b,conjg(a)],[2,2]) 
-    
+    a = cmplx(x(0),x(1),dp)
+    b = cmplx(x(2),x(3),dp)
+
+    SU2_ran = SU2_matrix(a,b)
+
+
   end function SU2_ran
 
   function staples(U,x,mu) result(A)
@@ -101,6 +104,74 @@ contains
     end do
   end function staples
 
+  subroutine metropolis(U,x,mu,beta)
+    type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
+    type(SU2) :: Up
+    real(dp) :: r, prob
+    real(dp), intent(in) :: beta
+    integer(i4), intent(in) :: x(4),mu
+
+    prob = min(1.0_dp,exp(-DS(U,Up,mu,x,beta)))
+
+
+    
+    call random_number(r)
+    if( prob >= r )then
+       U = Up
+    end if
+
+  end subroutine metropolis
+
+  pure function sgn(x)
+    real(dp), intent(in) :: x
+    integer(i4) :: sgn
+
+    if( x > 0.0_dp )then
+       sgn = 1
+    elseif( x < 0.0_dp)then
+       sgn = -1
+    else
+       sgn = 0
+    end if
+    
+  end function sgn
+    
+  function DS(U,Up,mu,x,beta)
+    type(SU2), dimension(:,:,:,:,:), intent(in) :: U
+    integer(i4), intent(in) :: x(4), mu
+    real(dp), intent(in) :: beta
+    type(SU2), intent(out) :: Up
+    real(dp) :: DS
+
+    call create_unbiased_update(Up)
+
+    DS = - beta/2*real( tr( (Up - U(mu,x(1),x(2),x(3),x(4))) * dagger(staples(U,x,mu)) ) )
+
+  end function DS
+
+  subroutine create_unbiased_update(Up)
+    type(SU2), intent(out) :: Up
+    complex(dp) :: a, b
+    real(dp), dimension(0:3) :: r
+
+    call random_number(r)
+    r = r - 0.5_dp
+    r = r/norm2(r)
+    a = cmplx(r(0),r(1),dp)
+    b = cmplx(r(2),r(3),dp)
+
+    Up = SU2_matrix(a,b)
+
+  end subroutine create_unbiased_update
+
+  function SU2_matrix(a,b) result(matrix)
+    complex(dp), intent(in)  :: a, b
+    type(SU2) :: matrix
+      matrix%matrix(1,1) = a
+      matrix%matrix(1,2) = b
+      matrix%matrix(2,1) = -conjg(b)
+      matrix%matrix(2,2) =  conjg(a)
+  end function SU2_matrix
 
   subroutine heatbath(U,x,mu,beta)
 
@@ -133,10 +204,10 @@ contains
     
     call random_number(W)
     n(1) = 1.0_dp - 2*W(1)
-    n(2) = sqrt(1.0_dp - n(1)**2) * cos(2*pi*W(2))
-    n(3) = sqrt(1.0_dp - n(1)**2) * sin(2*pi*W(2))
+    n(2) = sqrt(1.0_dp - (n(1))**2) * cos(2*pi*W(2))
+    n(3) = sqrt(1.0_dp - (n(1))**2) * sin(2*pi*W(2))
     
-    n(1:3) = sqrt(1.0_dp - n(0)**2) * n(1:3)
+    n(1:3) = sqrt(1.0_dp - (n(0))**2) * n(1:3)
     
     a = cmplx(n(0),n(1),dp)
     b = cmplx(n(2),n(3),dp)
@@ -156,32 +227,27 @@ contains
     real(dp) :: alpha
     logical :: condition
 
-    real(dp) :: r(3), lambdasq, s,n(0:3), W(2)
+    real(dp) :: r,n(0:3), W(2), c
     complex(dp) :: a,b
-
+    
     sigma = staples(U,x,mu)
     alpha = sqrt(det(sigma))
     
     V = sigma/alpha
-    
+    c = exp(-2*beta*alpha)
     condition = .false.
     do while (condition .eqv. .false.)
+       n(0) = 1.0_dp + 1/(beta*alpha) * log(uran(c,1.0_dp))
        call random_number(r)
-       r = 1.0_dp - r
-       
-       lambdasq = -1/(2*alpha*beta) * (log(r(1)) + (cos(2*pi*r(2)))**2 * log(r(3)))
-       
-       call random_number(s)
-       if (s**2 <= 1.0_dp - lambdasq) condition = .true.
+       if (r <= 1.0_dp - sqrt(1.0_dp-(n(0))**2)) condition = .true.
     end do
-    n(0) = 1.0_dp - 2*lambdasq
-    
+   
     call random_number(W)
     n(1) = 1.0_dp - 2*W(1)
-    n(2) = sqrt(1.0_dp - n(1)**2) * cos(2*pi*W(2))
-    n(3) = sqrt(1.0_dp - n(1)**2) * sin(2*pi*W(2))
+    n(2) = sqrt(1.0_dp - (n(1))**2) * cos(2*pi*W(2))
+    n(3) = sqrt(1.0_dp - (n(1))**2) * sin(2*pi*W(2))
     
-    n(1:3) = sqrt(1.0_dp - n(0)**2) * n(1:3)
+    n(1:3) = sqrt(1.0_dp - (n(0))**2) * n(1:3)
     
     a = cmplx(n(0),n(1),dp)
     b = cmplx(n(2),n(3),dp)
@@ -192,6 +258,14 @@ contains
     
   end subroutine heatbath_creutz
 
+  function uran(a,b)
+    real(dp), intent(in) :: a, b
+    real(dp) :: uran
+    real(dp) :: r
+
+    call random_number(r)
+    uran = a + (b-a)*r
+  end function uran
   
   subroutine sweeps(u,beta)
 
@@ -208,7 +282,7 @@ contains
           do z = 1, L
              do t = 1, Lt
                 do mu = 1, 4
-                   call heatbath(U,[x,y,z,t],mu,beta)
+                   call metropolis(U,[x,y,z,t],mu,beta)
                 end do
              end do
           end do
