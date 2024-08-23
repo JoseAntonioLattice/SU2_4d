@@ -1,33 +1,27 @@
 module parameters
 
-  use iso_fortran_env, only : dp => real64, i4 => int32
+  use precision
   implicit none
 
-  integer(i4) :: L
+  integer(i4), parameter :: d = 4
+  integer(i4), parameter :: N = 2
+  integer(i4) :: L, Lt
+  integer(i4) :: N_thermalization
   integer(i4) :: N_measurements
   integer(i4) :: N_skip
-  integer(i4) :: N_thermalization
+  real(dp)    :: bi, bf
   integer(i4) :: N_beta
-
-  real(dp) :: bi, bf
-
-  namelist /input_parameters/ L,N_measurements,N_skip,N_thermalization,N_beta,bi,bf
+  namelist /input_parameters/ L,Lt,N_thermalization,N_measurements,N_skip,bi,bf,N_beta
 
 contains
+  
+  subroutine read_input()
+    character(256) :: filename
+    integer(i4) :: unit
 
-  subroutine read_input
-    integer(i4) :: inunit
-    character(256) :: parameters_file
-
-    write(*,'(a)') 'Please, type the parameters file name:'
-    read(*,'(a)') parameters_file
-    write(*,'(2a)') 'User typed: ', trim(parameters_file)
-
-    open(newunit = inunit, file = trim(parameters_file), status = 'old')
-    read(inunit, nml = input_parameters)
-    close(inunit)
+    read(*,'(a)') filename
+    open(newunit = unit, file = trim(filename), status = 'old')
+    read(unit, nml = input_parameters)
     write(*,nml = input_parameters)
-    
   end subroutine read_input
-
 end module parameters

@@ -1,14 +1,9 @@
 module arrays
-
-  use iso_fortran_env, only : dp => real64, i4 => int32
-  use data_types
+  use precision
+  use datatypes
   implicit none
-  
+
   type(SU2), allocatable, dimension(:,:,:,:,:) :: U
-  real(dp), allocatable, dimension(:) :: beta
-  real(dp), allocatable, dimension(:) :: plq_action
-
-  real(dp) :: avr_action,err_action
-  integer(i4) :: bins
-
+  real(dp), allocatable, dimension(:) :: beta, P
+  real(dp) :: avr_P, err_P
 end module arrays

@@ -1,126 +1,66 @@
 module dynamics
 
-  use data_types
-  use pbc 
-  use iso_fortran_env, only : dp => real64, i4 => int32
+  use precision
+  use datatypes
+  use pbc, only : ip, im
   implicit none
 
   real(dp), parameter :: pi = acos(-1.0_dp)
-  
 contains
 
-  subroutine set_memory(U,beta,L,Lt,N_beta,bi,bf,plqaction,n_measurements)
-    type(SU2), allocatable, dimension(:,:,:,:,:) :: U
-    real(dp), allocatable, dimension(:) :: beta
-    integer(i4), intent(in) :: L,Lt,N_beta,n_measurements
-    real(dp), intent(in) :: bi, bf
-    real(dp), allocatable, dimension(:) :: plqaction
-   
-    
-    integer(i4) :: i
-
-    call set_periodic_bounds(L,Lt)
-    allocate(U(4,L,L,L,Lt))
-    allocate(beta(N_beta))
-    allocate(plqaction(n_measurements))
-    do i=1,N_beta
-       beta(i) = bi + (bf-bi)/(N_beta-1) * (i-1)
-    end do
-    
-  end subroutine set_memory
-
-  subroutine cold_start(U)
-    type(SU2), dimension(:,:,:,:,:), intent(out) :: U
-
-    U = one
-    
-  end subroutine cold_start
-
+  ! STARTS
   subroutine hot_start(U)
-    type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
-    integer(i4) :: mu,x,y,z,t
-    integer(i4) :: L, Lt
+    use parameters, only : d, L, Lt
+    type(SU2), intent(out) :: U(d,L,L,L,Lt)
+    integer(i4) :: x1,x2,x3,x4,mu
 
-    L = size((U(1,:,1,1,1)))
-    Lt = size((U(1,1,1,1,:)))
-    do x = 1, L
-       do y = 1, L
-          do z = 1, L
-             do t = 1, Lt
-                do mu = 1, 4
-                   !call create_unbiased_update(U(mu,x,y,z,t))
-                   U(mu,x,y,z,t) = SU2_ran()
+    do x1 = 1, L
+       do x2 = 1, L
+          do x3 = 1, L
+             do x4 = 1, Lt
+                do mu = 1, d
+                   U(mu,x1,x2,x3,x4) = SU2_ran()
                 end do
              end do
           end do
        end do
     end do
+    
   end subroutine hot_start
 
-  function SU2_ran()
+  subroutine cold_start(U)
+    use parameters, only : d, L, Lt
+    type(SU2), intent(out) :: U(d,L,L,L,Lt)
+    U = SU2_matrix((1.0_dp,0.0_dp),(0.0_dp,0.0_dp))
+  end subroutine cold_start
+  
+  function SU2_ran() 
     type(SU2) :: SU2_ran
-    complex(dp) :: a, b
-    real(dp), dimension(0:3) :: r, x
-    real(dp), parameter :: eps = 0.1_dp
-    real(dp) :: norm_r
-
+    real(dp) :: r(4)
+    complex(dp) :: a,b
     call random_number(r)
     r = r - 0.5_dp
-    norm_r = sqrt(r(1)**2 + r(2)**2 + r(3)**2)
-
-    x(1:3) = eps*r(1:3)/norm_r
-    x(0) = sgn(r(0)) * sqrt(1.0_dp - eps**2)
-
-    a = cmplx(x(0),x(1),dp)
-    b = cmplx(x(2),x(3),dp)
-
+    r = r / norm2(r)
+    a = cmplx(r(1),r(2),dp)
+    b = cmplx(r(3),r(4),dp)
     SU2_ran = SU2_matrix(a,b)
-
-
+    
   end function SU2_ran
 
-  function staples(U,x,mu) result(A)
-
-    type(SU2), dimension(:,:,:,:,:), intent(in) :: U
-    integer(i4), intent(in) :: x(4), mu
-    integer(i4) :: nu
-    integer(i4), parameter :: d = 4
-    type(SU2) :: A
-
-    integer(i4), dimension(4) :: x2,x3,x4,x5
-
-    A%matrix = (0.0_dp,0.0_dp)
-    x3 = ip_func(x,mu) ! x + mu
-    do nu = 1, d
-       if(nu .ne. mu)then
-
-          x2 = ip_func(x,nu) ! x + nu
-          x4 = im_func(x,nu) ! x - nu
-          x5 = ip_func(x4,mu)! x - nu + mu
-
-          A = A + U(nu,x(1),x(2),x(3),x(4))*U(mu,x2(1),x2(2),x2(3),x2(4))*dagger(U(nu,x3(1),x3(2),x3(3),x3(4)))+ &
-             dagger(U(nu,x4(1),x4(2),x4(3),x4(4)))*U(mu,x4(1),x4(2),x4(3),x4(4))*U(nu,x5(1),x5(2),x5(3),x5(4))
-       end if
-    end do
-  end function staples
-
-  subroutine metropolis(U,x,mu,beta)
-    type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
-    type(SU2) :: Up
-    real(dp) :: r, prob
-    real(dp), intent(in) :: beta
-    integer(i4), intent(in) :: x(4),mu
-
-    prob = min(1.0_dp,exp(-DS(U,Up,mu,x,beta)))
-
-
-    
+  function small_SU2_ran() 
+    type(SU2) :: small_SU2_ran
+    real(dp) :: r(0:3)
+    complex(dp) :: a,b
+    real(dp), parameter :: eps = 0.1_dp
     call random_number(r)
-    if( prob >= r )then
-       U = Up
-    end if
-
-  end subroutine metropolis
+    r = r - 0.5_dp
+    r(1:3) = eps * r(1:3) / norm2(r(1:3))
+    r(0) = sgn(r(0)) * sqrt(1.0_dp - eps**2)
+    a = cmplx(r(0),r(1),dp)
+    b = cmplx(r(2),r(3),dp)
+    small_SU2_ran = SU2_matrix(a,b)
+    
+  end function small_SU2_ran
 
   pure function sgn(x)
     real(dp), intent(in) :: x
@@ -133,49 +73,161 @@ contains
     else
        sgn = 0
     end if
-    
+
   end function sgn
-    
-  function DS(U,Up,mu,x,beta)
+
+  function SU2_matrix(a,b)
+    type(SU2) :: SU2_matrix
+    complex(dp) :: a,b
+    SU2_matrix%matrix(1,1) = a
+    SU2_matrix%matrix(1,2) = b
+    SU2_matrix%matrix(2,1) = -conjg(b)
+    SU2_matrix%matrix(2,2) =  conjg(a)
+  end function SU2_matrix
+
+  function plaquette(U,x,mu,nu)
     type(SU2), dimension(:,:,:,:,:), intent(in) :: U
     integer(i4), intent(in) :: x(4), mu
-    real(dp), intent(in) :: beta
+    integer(i4) :: nu,x2(4),x3(4)
+    type(SU2) :: plaquette
+
+    x2 = ip(x,mu)
+    x3 = ip(x,nu)
+
+    plaquette = U(mu, x(1), x(2), x(3), x(4)) * &
+                U(nu,x2(1),x2(2),x2(3),x2(4)) * &
+         dagger(U(mu,x3(1),x3(2),x3(3),x3(4)))* &
+         dagger(U(nu, x(1), x(2), x(3), x(4))) 
+  end function plaquette
+  
+  function plaquette_value(U) result(P)
+    use parameters, only : d, N, L, Lt
+    type(SU2), dimension(d,L,L,L,Lt), intent(in) :: U
+    real(dp) :: P
+    integer(i4) :: vol
+    integer(i4), parameter :: planes = d*(d-1)/2 
+    integer(i4) :: x1,x2,x3,x4,mu,nu
+    P = 0.0_dp
+    do x1 = 1, L
+       do x2 = 1, L
+          do x3 =1, L
+             do x4 = 1, Lt
+                do mu = 1, d - 1
+                   do nu = mu + 1, d
+                      P = P + real(tr(plaquette(U,[x1,x2,x3,x4],mu,nu)))
+                   end do
+                end do
+             end do
+          end do
+       end do
+    end do
+    vol = L**3*Lt
+    P = P/(N*planes*vol)
+  end function plaquette_value
+  
+  function staples(U,x,mu)
+    use parameters, only: d
+    type(SU2), dimension(:,:,:,:,:), intent(in) :: U
+    integer(i4), intent(in) :: x(4), mu
+    integer(i4) :: nu
+    integer(i4), dimension(4) :: x2,x3,x4,x5
+    type(SU2) :: staples
+
+    staples%matrix = 0.0_dp
+    x3 = ip(x,mu) ! x + mu
+    do nu = 1, d
+       if( nu .ne. mu) then
+          x2 = ip( x,nu) ! x + nu
+          x4 = im( x,nu) ! x - nu
+          x5 = im(x3,nu) ! x + mu + nu
+          staples = staples + U(nu, x(1), x(2), x(3), x(4)) *&
+                              U(mu,x2(1),x2(2),x2(3),x2(4)) *&
+                       dagger(U(nu,x3(1),x3(2),x3(3),x3(4)))+&
+                       dagger(U(nu,x4(1),x4(2),x4(3),x4(4)))*&
+                              U(mu,x4(1),x4(2),x4(3),x4(4)) *&
+                              U(nu,x5(1),x5(2),x5(3),x5(4))
+       end if
+    end do
+  end function staples
+
+  function DS(U,mu,Up,x)
+    type(SU2), dimension(:,:,:,:,:), intent(in) :: U
+    integer(i4), intent(in) :: x(4), mu
     type(SU2), intent(out) :: Up
     real(dp) :: DS
 
-    call create_unbiased_update(Up)
-
-    DS = - beta/2*real( tr( (Up - U(mu,x(1),x(2),x(3),x(4))) * dagger(staples(U,x,mu)) ) )
+  !  call create_unbiased_update(Up)
+    Up = SU2_ran()
+    DS = - real( tr( (Up - U(mu,x(1),x(2),x(3),x(4))) * dagger(staples(U,[x(1),x(2),x(3),x(4)],mu)) ))
 
   end function DS
 
-  subroutine create_unbiased_update(Up)
-    type(SU2), intent(out) :: Up
-    complex(dp) :: a, b
-    real(dp), dimension(0:3) :: r
+  subroutine thermalization(U,beta)
+    use parameters, only : N_thermalization
+    type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
+    real(dp), intent(in) :: beta
+    integer(i4) :: i_sweeps
+    do i_sweeps = 1, N_thermalization
+       call sweeps(U,beta)
+       !write(10,*) plaquette_value(U)
+    end do
+  end subroutine thermalization
+
+  subroutine measurements(U,beta,P)
+    use parameters, only : N_measurements, N_skip
+    type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
+    real(dp), intent(in) :: beta
+    real(dp), dimension(N_measurements), intent(out) :: P
+    integer(i4) :: i_sweeps, i_skip
+    do i_sweeps = 1, N_measurements
+       do i_skip = 1, N_skip
+          call sweeps(U,beta)
+       end do
+       P(i_sweeps) = plaquette_value(U)
+       !print*, plaquette_value(U)!P(i_sweeps)
+    end do
+  end subroutine measurements
+  
+  subroutine sweeps(U,beta)
+    use parameters, only : d, L, Lt, N
+    type(SU2), dimension(d,L,L,L,Lt), intent(inout) :: U
+    real(dp), intent(in) :: beta
+    integer(i4) :: x1,x2,x3,x4,mu
+    real(dp) :: DeltaS
+    type(SU2) :: Up
+    do x1 = 1, L
+       do x2 = 1, L
+          do x3 = 1, L
+             do x4 = 1, Lt
+                do mu = 1, d
+                   DeltaS = (beta/N) * DS(U,mu,Up,[x1,x2,x3,x4])
+                   call metropolis(DeltaS,U(mu,x1,x2,x3,x4)%matrix,Up%matrix)
+                   !call metropolis(U,[x1,x2,x3,x4],mu,beta)
+                end do
+             end do
+          end do
+       end do
+    end do
+  end subroutine sweeps
+  
+  subroutine metropolis(Delta_S,U,Up)
+    real(dp), intent(in) :: Delta_S
+    complex(dp), dimension(:,:), intent(inout) :: U
+    complex(dp), dimension(:,:), intent(in) :: Up
+    real(dp) :: r, prob
+
+    prob = min(1.0_dp,exp(-Delta_S))
 
     call random_number(r)
-    r = r - 0.5_dp
-    r = r/norm2(r)
-    a = cmplx(r(0),r(1),dp)
-    b = cmplx(r(2),r(3),dp)
+    if( prob >= r )then
+       U = Up
+    end if
 
-    Up = SU2_matrix(a,b)
-
-  end subroutine create_unbiased_update
-
-  function SU2_matrix(a,b) result(matrix)
-    complex(dp), intent(in)  :: a, b
-    type(SU2) :: matrix
-      matrix%matrix(1,1) = a
-      matrix%matrix(1,2) = b
-      matrix%matrix(2,1) = -conjg(b)
-      matrix%matrix(2,2) =  conjg(a)
-  end function SU2_matrix
+  end subroutine metropolis
 
   subroutine heatbath(U,x,mu,beta)
-
-    type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
+    use parameters, only : L, Lt
+    type(SU2), dimension(4,L,L,L,Lt), intent(inout) :: U
     integer(i4), intent(in) :: mu, x(4)
     real(dp), intent(in) :: beta
     type(SU2) :: sigma,V,Xmat
@@ -187,189 +239,35 @@ contains
 
     sigma = staples(U,x,mu)
     alpha = sqrt(det(sigma))
-    
+
     V = sigma/alpha
-    
+
     condition = .false.
     do while (condition .eqv. .false.)
        call random_number(r)
        r = 1.0_dp - r
-       
+
        lambdasq = -1/(2*alpha*beta) * (log(r(1)) + (cos(2*pi*r(2)))**2 * log(r(3)))
-       
+
        call random_number(s)
        if (s**2 <= 1.0_dp - lambdasq) condition = .true.
     end do
     n(0) = 1.0_dp - 2*lambdasq
-    
+
     call random_number(W)
     n(1) = 1.0_dp - 2*W(1)
     n(2) = sqrt(1.0_dp - (n(1))**2) * cos(2*pi*W(2))
     n(3) = sqrt(1.0_dp - (n(1))**2) * sin(2*pi*W(2))
-    
+
     n(1:3) = sqrt(1.0_dp - (n(0))**2) * n(1:3)
-    
+
     a = cmplx(n(0),n(1),dp)
     b = cmplx(n(2),n(3),dp)
-    
     Xmat%matrix = reshape([a,-conjg(b),b,conjg(a)],[2,2])
-    
+
     U(mu,x(1),x(2),x(3),x(4)) = Xmat * V
-    
+
   end subroutine heatbath
 
-  subroutine heatbath_creutz(U,x,mu,beta)
-
-    type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
-    integer(i4), intent(in) :: mu, x(4)
-    real(dp), intent(in) :: beta
-    type(SU2) :: sigma,V,Xmat
-    real(dp) :: alpha
-    logical :: condition
-
-    real(dp) :: r,n(0:3), W(2), c
-    complex(dp) :: a,b
-    
-    sigma = staples(U,x,mu)
-    alpha = sqrt(det(sigma))
-    
-    V = sigma/alpha
-    c = exp(-2*beta*alpha)
-    condition = .false.
-    do while (condition .eqv. .false.)
-       n(0) = 1.0_dp + 1/(beta*alpha) * log(uran(c,1.0_dp))
-       call random_number(r)
-       if (r <= 1.0_dp - sqrt(1.0_dp-(n(0))**2)) condition = .true.
-    end do
-   
-    call random_number(W)
-    n(1) = 1.0_dp - 2*W(1)
-    n(2) = sqrt(1.0_dp - (n(1))**2) * cos(2*pi*W(2))
-    n(3) = sqrt(1.0_dp - (n(1))**2) * sin(2*pi*W(2))
-    
-    n(1:3) = sqrt(1.0_dp - (n(0))**2) * n(1:3)
-    
-    a = cmplx(n(0),n(1),dp)
-    b = cmplx(n(2),n(3),dp)
-    
-    Xmat%matrix = reshape([a,-conjg(b),b,conjg(a)],[2,2])
-    
-    U(mu,x(1),x(2),x(3),x(4)) = Xmat * V
-    
-  end subroutine heatbath_creutz
-
-  function uran(a,b)
-    real(dp), intent(in) :: a, b
-    real(dp) :: uran
-    real(dp) :: r
-
-    call random_number(r)
-    uran = a + (b-a)*r
-  end function uran
   
-  subroutine sweeps(u,beta)
-
-    type(SU2), dimension(:,:,:,:,:), intent(inout) :: u
-    real(dp), intent(in) :: beta
-
-    integer(i4) :: x,y,z,t,mu
-    integer(i4) :: L,Lt
-
-    L  = size(u(1,:,1,1,1))
-    Lt = size(u(1,1,1,1,:))
-    do x = 1, L
-       do y = 1, L
-          do z = 1, L
-             do t = 1, Lt
-                do mu = 1, 4
-                   call metropolis(U,[x,y,z,t],mu,beta)
-                end do
-             end do
-          end do
-       end do
-    end do
-
-  end subroutine sweeps
-
-  subroutine initialization(u,plqaction,beta,N_thermalization,N_measurements, N_skip)
-
-    type(SU2), dimension(:,:,:,:,:), intent(inout) :: u
-    real(dp), dimension(:), intent(out) :: plqaction
-    integer(i4), intent(in) :: N_thermalization, N_measurements, N_skip
-    real(dp), intent(in) :: beta
-
-    integer(i4) :: i_skip, i_sweeps
-
-    call thermalization(u, N_thermalization, beta)
-    
-    do i_sweeps = 1, N_measurements
-       do i_skip = 1, n_skip
-          call sweeps(u,beta)
-       end do
-       plqaction(i_sweeps) = action(u)
-    end do
-
-  end subroutine initialization
-
-  subroutine thermalization(u,N_thermalization,beta)
-
-    type(SU2), dimension(:,:,:,:,:), intent(inout) :: u
-    integer(i4) :: N_thermalization
-    real(dp) :: beta
-
-    integer(i4) :: i_sweeps
-    
-    do i_sweeps = 1, N_thermalization
-       call sweeps(u,beta)
-    end do
-    
-  end subroutine thermalization
-
-function action(u)
-
-    real(dp) :: action
-
-    type(SU2), dimension(:,:,:,:,:), intent(in) :: u
-
-    integer(i4) :: x,y,z,t,mu,nu
-    integer(i4) :: L,Lt
-
-    L = size(U(1,:,1,1,1))
-    Lt = size(U(1,1,1,1,:))
-    action = 0.0_dp
-
-    do x = 1, L
-       do y = 1, L
-          do z = 1, L
-             do t = 1, Lt
-                do mu = 1, 3
-                   do nu = mu+1,4
-                      action = action + real(tr(plaquette(u,[x,y,z,t],mu,nu)))
-                   end do
-                end do
-             end do
-          end do
-       end do
-    end do
-    action = action / (2*6*L**3*Lt)
-
-  end function action
-
-  function plaquette(u,x,mu,nu)
-
-    type(SU2) :: plaquette
-
-    type(SU2), dimension(:,:,:,:,:), intent(in) :: u
-    integer(i4), intent(in) :: x(4),mu,nu
-    integer(i4), dimension(4) :: x2, x3
-
-
-    x2 = ip_func(x,mu)
-    x3 = ip_func(x,nu)
-
-    plaquette = U(mu,x(1),x(2),x(3),x(4)) * U(nu,x2(1),x2(2),x2(3),x(4)) * &
-         dagger(U(mu,x3(1),x3(2),x3(3),x(4))) * dagger(U(nu,x(1),x(2),x(3),x(4)))
-
-  end function plaquette
-
 end module dynamics

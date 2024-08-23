@@ -4,7 +4,7 @@ module pbc
 
   implicit none
 
-  integer, allocatable, dimension(:) :: ip, im, ip_t, im_t
+  integer, allocatable, dimension(:) :: ip_array, im_array, ip_t, im_t
 
 contains
 
@@ -12,7 +12,7 @@ contains
 
     integer(i4), intent(in) :: L, Lt
 
-    allocate(ip(L),im(L),ip_t(L),im_t(L))
+    allocate(ip_array(L),im_array(L),ip_t(Lt),im_t(Lt))
     call initialize(L,Lt)
 
   end subroutine set_periodic_bounds
@@ -23,11 +23,11 @@ contains
     integer(i4) :: i
 
     do i = 1, L
-       ip(i) = i + 1
-       im(i) = i - 1
+       ip_array(i) = i + 1
+       im_array(i) = i - 1
     end do
-    ip(L) = 1
-    im(1) = L
+    ip_array(L) = 1
+    im_array(1) = L
 
     
     do i = 1, Lt
@@ -39,34 +39,39 @@ contains
     
   end subroutine initialize
 
-  function ip_func(vector,mu)
+  function ip(vector,mu)
     integer, dimension(:), intent(in) :: vector
     integer, intent(in) :: mu
 
-    integer, dimension(size(vector)) :: ip_func
+    integer, dimension(size(vector)) :: ip
 
 
-    ip_func = vector
+    ip = vector
 
-    ip_func(mu) = ip(vector(mu))
-    if (mu == 4) ip_func(mu) = ip_t(vector(mu))
-    
-  end function ip_func
+    if (mu ==  size(vector)) then
+       ip(mu) = ip_t(vector(mu))
+    else
+       ip(mu) = ip_array(vector(mu))
+    end if
+  end function ip
 
 
-  function im_func(vector,mu)
+  function im(vector,mu)
 
     integer, dimension(:), intent(in) :: vector
     integer, intent(in) :: mu
 
-    integer, dimension(size(vector)) :: im_func
+    integer, dimension(size(vector)) :: im
 
 
-    im_func = vector
+    im = vector
 
-    im_func(mu) = im(vector(mu))
-    if (mu == 4) im_func(mu) = im_t(vector(mu))
     
-  end function im_func
+    if (mu == size(vector))then
+       im(mu) = im_t(vector(mu))
+    else
+       im(mu) = im_array(vector(mu))
+    end if
+  end function im
 
 end module pbc
