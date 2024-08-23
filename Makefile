@@ -5,9 +5,9 @@ TARGET = SU2_4d.exe
 BIN = bin
 SRC = src
 
-FFLAGS = -Wall -Wextra -fcheck=all -O0 -std=f2008
-
-SOURCE = pbc.f90 data_types.f90 parameters.f90 arrays.f90 dynamics.f90 statistics.f90 main.f90
+#FFLAGS = -Wall -Wextra -fcheck=all -O0 -std=f2008
+FFLAGS = -O3
+SOURCE = statistics.f90 pbc.f90 precision.f90 parameters.f90 datatypes.f90 arrays.f90 dynamics.f90 main.f90
 OBJECT = $(patsubst %, $(BIN)/%, $(SOURCE:.f90=.o) )
 
 $(BIN)/$(TARGET): $(OBJECT)
@@ -22,6 +22,6 @@ clean:
 	rm -f $(BIN)/*
 
 run:
-	@echo input/input_parameters.par | time $(BIN)/$(TARGET)
+	@echo 'input/input_parameters.par' | time $(BIN)/$(TARGET)
 
 
