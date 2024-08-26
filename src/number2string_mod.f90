@@ -17,11 +17,12 @@ contains
       int2str = adjustl(int2str)
     end function int2str
 
-    character(6) function real2str(real_)
-      real(dp), intent(in) :: real_
-      character(6) :: string_
-      write(string_,"(f6.4)") real_
-      real2str = string_
+    character(20) function real2str(r)
+      real(dp), intent(in) :: r
+      
+      write(real2str,"(f10.4)") r
+      real2str = adjustl(real2str)
+      
     end function real2str
 
 end module number2string_mod

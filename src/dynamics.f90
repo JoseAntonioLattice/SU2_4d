@@ -189,27 +189,43 @@ contains
           call sweeps(U,beta)
        end do
        P(i_sweeps) = plaquette_value(U)
+       write(100,*) P(i_sweeps)
     end do
   end subroutine measurements
   
   subroutine sweeps(U,beta)
-    use parameters, only : d, L, Lt, N
+    use parameters, only : d, L, Lt, algorithm
     type(SU2), dimension(d,L,L,L,Lt), intent(inout) :: U
     real(dp), intent(in) :: beta
     integer(i4) :: x1,x2,x3,x4,mu
     type(SU2) :: Up
 
-    do x1 = 1, L
-       do x2 = 1, L
-          do x3 = 1, L
-             do x4 = 1, Lt
-                do mu = 1, d
-                   call heatbath(U,[x1,x2,x3,x4],mu,beta)
+    select case(algorithm)
+    case("heatbath")
+       do x1 = 1, L
+          do x2 = 1, L
+             do x3 = 1, L
+                do x4 = 1, Lt
+                   do mu = 1, d
+                      call heatbath(U,[x1,x2,x3,x4],mu,beta)
+                   end do
                 end do
              end do
           end do
        end do
-    end do
+    case("metropolis")
+       do x1 = 1, L
+          do x2 = 1, L
+             do x3 = 1, L
+                do x4 = 1, Lt
+                   do mu = 1, d
+                      call metropolis(U,[x1,x2,x3,x4],mu,beta)
+                   end do
+                end do
+             end do
+          end do
+       end do 
+    end select
   end subroutine sweeps
   
   subroutine metropolis(U,x,mu,beta)

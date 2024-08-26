@@ -7,5 +7,5 @@ N_skip = 10
 N_beta = 100
 bi = 0.1
 bf = 10.0
-algorithm = 'heatbath'
+algorithm = 'metropolis' !Choose between "metropolis" or "heatbath"
 /

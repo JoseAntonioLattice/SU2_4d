@@ -15,7 +15,9 @@ program SU2_4d
   call set_periodic_bounds(L,Lt)
   call hot_start(U)
 
-  open(unit = 10, file = 'data/data.dat', status = 'unknown')
+  open(unit = 10, file = 'data/Lx='//trim(int2str(L))//'_Lt='&
+                         //trim(int2str(Lt))//'_'//trim(algorithm)//'.dat'&
+                         ,status = 'unknown')
   do i = 1, N_beta
      beta(i) = bi + (bf - bi)/(N_beta - 1) * (i-1)
      call create_measurements_file(L,Lt,beta(i),algorithm,.true.)

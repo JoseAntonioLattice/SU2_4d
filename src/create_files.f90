@@ -36,7 +36,7 @@ contains
     directory = trim(directory)//"/"//trim(algorithm1)
     call check_directory(trim(directory))
 
-    directory = trim(directory)//"/beta="//real2str(beta)
+    directory = trim(directory)//"/beta="//trim(adjustl(real2str(beta)))
     call check_directory(trim(directory))
 
     directory = trim(directory)//"/observables_"
@@ -49,7 +49,7 @@ contains
        if (condition .eqv. .false.) exit
        i = i + 1
     end do
-    open(unit = 100, file = data_file)
+    open(unit = 100, file = trim(data_file))
     write(100, nml = input_parameters )
     
   end subroutine create_measurements_file
