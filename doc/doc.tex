@@ -1,0 +1,77 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+%\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\author{José Antonio García-Hernández}
+\title{Documentation}
+\usepackage{tabularx}
+\begin{document}
+\maketitle
+
+\section{Main}
+This is the main program. It calls the thermalization subroutine.
+\section{Parameters}
+This is a module.
+\section{Arrays}
+\section{Datatypes} 
+\section{Dynamics}
+\subsection{Subroutine: hot\_start(U)}
+ This subroutine creates a random SU(2) field configuration $U$ on the lattice.
+ \subsection{Subroutine: cold\_start(U)}
+ This subroutine creates a uniform SU(2) field configuration $U$ on the lattice equal to the 2$\times$2 identity matrix.
+ \subsection{Function: SU2\_ran()}
+ This function does not require an argument. It creates a random SU(2) element.
+ \subsection{Function: small\_SU2\_ran()}
+ This function does not require an argument. It creates a random SU(2) element near the identity. 
+  \subsection{Function: sgn(x)}
+ This function returns 1 if the argument $x$ is positive, -1 if negative and 0 otherwise. 
+  \subsection{Function: SU2\_matrix(a,b)}
+ This function creates a SU(2) matrix given two complex numbers $a$ and $b$.
+  \subsection{Function: plaquette(U,x,mu,nu)}
+ This function takes an SU(2) type element $U$ a four-element integer array $x$ and two integers $\mu$ and $\nu$ and returns a SU(2) type element.
+   \subsection{Function: plaquette\_value(U)}
+ This function takes an SU(2) type element $U$ a four-element and return a double precision real. This function computes the sum of the plaquettes of the whole lattice and divide it by the volume by $N=2$, and by the number of planes in $d = 4$ dimensions.
+    \subsection{Function: staples(U,x,mu)}
+ This function takes a 5-dimensional array of SU(2) type element $U$ a 4-element integer array $x$ and an integer $\mu$ and returns a SU2 type element. This function computes the sum of staples in $d =4$ dimensions.
+     \subsection{Function: DS(U,Up,x,mu,beta)}
+ This function takes a rank 5 array of SU(2) type element $U$ another SU2 type Up, a 4-element integer array $x$, an integer $\mu$, a double precision real beta and returns a double precision number. This function computes the difference of the action after a single link update.
+	\subsection{Subroutine: thermalization(U, beta)}
+	This subroutine updates the lattice by $N_{thermalization}$ sweeps to thermalize.
+	\subsection{Subroutine: measurements(U, beta,P)}
+	This function takes measurements of the plaquette value every $N_{skip}$ sweeps $N_measurements$ times.	 
+	
+	\subsection{Subroutine: sweeps(U, beta)}
+	This subroutine goes through all the lattice and all the directions and applies the local update algorithm (metropolis or heatbath).	 
+	
+	\subsection{Subroutine: metropolis(U,x,mu,beta)}
+	This subrotuine implements the metropolis algorithm.	 
+ 
+ \subsection{Subroutine: heatbath(U,x,mu,beta)}
+ \begin{tabular}{rll}
+ subroutine heatbath(& type(SU2), dimension(:,:,:,:,:) & U, \\ 
+
+  & integer, dimension(4) & x, \\ 
+
+  & integer & mu, \\ 
+
+  & real(dp) & beta \\ 
+  ) & &
+ \end{tabular} 
+ 
+ Purpose:\\
+ This subroutine implements the heatbath algorithm.
+ 
+ Parameters:
+ 	
+ \begin{tabularx}{\textwidth}{llX}
+  \textbf{[inout]} & U & U is a derived data type SU2 array, dimension(:,:,:,:,:). It updates the link variable U(mu,x(1),x(2),x(3),x(4)). \\
+  \textbf{[in]} & x & x is an INTEGER array, dimension (4). It is the array of the points in the lattice. \\ 
+  \textbf{[in]} & mu & mu is an INTEGER. Is the direction of the link.  \\ 
+  \textbf{[in]} & beta & beta is a REAL of kind (dp). It is related to the gauge coupling.
+  \end{tabularx}  
+  
+  
+\end{document}

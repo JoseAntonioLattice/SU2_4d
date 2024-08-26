@@ -38,6 +38,7 @@ contains
     type(SU2) :: SU2_ran
     real(dp) :: r(4)
     complex(dp) :: a,b
+
     call random_number(r)
     r = r - 0.5_dp
     r = r / norm2(r)
@@ -52,6 +53,7 @@ contains
     real(dp) :: r(0:3)
     complex(dp) :: a,b
     real(dp), parameter :: eps = 0.1_dp
+
     call random_number(r)
     r = r - 0.5_dp
     r(1:3) = eps * r(1:3) / norm2(r(1:3))
@@ -79,6 +81,7 @@ contains
   function SU2_matrix(a,b)
     type(SU2) :: SU2_matrix
     complex(dp) :: a,b
+
     SU2_matrix%matrix(1,1) = a
     SU2_matrix%matrix(1,2) = b
     SU2_matrix%matrix(2,1) = -conjg(b)
@@ -107,6 +110,7 @@ contains
     integer(i4) :: vol
     integer(i4), parameter :: planes = d*(d-1)/2 
     integer(i4) :: x1,x2,x3,x4,mu,nu
+
     P = 0.0_dp
     do x1 = 1, L
        do x2 = 1, L
@@ -150,15 +154,15 @@ contains
     end do
   end function staples
 
-  function DS(U,mu,Up,x)
+  function DS(U,Up,x,mu,beta)
+    use parameters, only : N
     type(SU2), dimension(:,:,:,:,:), intent(in) :: U
+    type(SU2), intent(in) :: Up
     integer(i4), intent(in) :: x(4), mu
-    type(SU2), intent(out) :: Up
+    real(dp), intent(in) :: beta
     real(dp) :: DS
 
-  !  call create_unbiased_update(Up)
-    Up = SU2_ran()
-    DS = - real( tr( (Up - U(mu,x(1),x(2),x(3),x(4))) * dagger(staples(U,[x(1),x(2),x(3),x(4)],mu)) ))
+    DS = -(beta/N)*real( tr( (Up - U(mu,x(1),x(2),x(3),x(4))) * dagger(staples(U,[x(1),x(2),x(3),x(4)],mu)) ))
 
   end function DS
 
@@ -167,9 +171,9 @@ contains
     type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
     real(dp), intent(in) :: beta
     integer(i4) :: i_sweeps
+
     do i_sweeps = 1, N_thermalization
        call sweeps(U,beta)
-       !write(10,*) plaquette_value(U)
     end do
   end subroutine thermalization
 
@@ -179,12 +183,12 @@ contains
     real(dp), intent(in) :: beta
     real(dp), dimension(N_measurements), intent(out) :: P
     integer(i4) :: i_sweeps, i_skip
+
     do i_sweeps = 1, N_measurements
        do i_skip = 1, N_skip
           call sweeps(U,beta)
        end do
        P(i_sweeps) = plaquette_value(U)
-       !print*, plaquette_value(U)!P(i_sweeps)
     end do
   end subroutine measurements
   
@@ -193,16 +197,14 @@ contains
     type(SU2), dimension(d,L,L,L,Lt), intent(inout) :: U
     real(dp), intent(in) :: beta
     integer(i4) :: x1,x2,x3,x4,mu
-    real(dp) :: DeltaS
     type(SU2) :: Up
+
     do x1 = 1, L
        do x2 = 1, L
           do x3 = 1, L
              do x4 = 1, Lt
                 do mu = 1, d
-                   DeltaS = (beta/N) * DS(U,mu,Up,[x1,x2,x3,x4])
-                   call metropolis(DeltaS,U(mu,x1,x2,x3,x4)%matrix,Up%matrix)
-                   !call metropolis(U,[x1,x2,x3,x4],mu,beta)
+                   call heatbath(U,[x1,x2,x3,x4],mu,beta)
                 end do
              end do
           end do
@@ -210,18 +212,19 @@ contains
     end do
   end subroutine sweeps
   
-  subroutine metropolis(Delta_S,U,Up)
-    real(dp), intent(in) :: Delta_S
-    complex(dp), dimension(:,:), intent(inout) :: U
-    complex(dp), dimension(:,:), intent(in) :: Up
-    real(dp) :: r, prob
+  subroutine metropolis(U,x,mu,beta)
+    type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
+    integer(i4) :: x(4), mu
+    real(dp), intent(in) :: beta
+    type(SU2) :: Up
+    real(dp) :: r, prob, DeltaS
 
-    prob = min(1.0_dp,exp(-Delta_S))
+    Up = SU2_ran()
+    DeltaS = DS(U,Up,x,mu,beta)
+    prob = min(1.0_dp,exp(-DeltaS))
 
     call random_number(r)
-    if( prob >= r )then
-       U = Up
-    end if
+    if( prob >= r ) U(mu,x(1),x(2),x(3),x(4)) = Up
 
   end subroutine metropolis
 
@@ -263,7 +266,7 @@ contains
 
     a = cmplx(n(0),n(1),dp)
     b = cmplx(n(2),n(3),dp)
-    Xmat%matrix = reshape([a,-conjg(b),b,conjg(a)],[2,2])
+    Xmat = SU2_matrix(a,b)
 
     U(mu,x(1),x(2),x(3),x(4)) = Xmat * V
 

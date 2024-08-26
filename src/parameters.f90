@@ -11,7 +11,8 @@ module parameters
   integer(i4) :: N_skip
   real(dp)    :: bi, bf
   integer(i4) :: N_beta
-  namelist /input_parameters/ L,Lt,N_thermalization,N_measurements,N_skip,bi,bf,N_beta
+  character(99):: algorithm
+  namelist /input_parameters/ L,Lt,N_thermalization,N_measurements,N_skip,bi,bf,N_beta,algorithm
 
 contains
   
