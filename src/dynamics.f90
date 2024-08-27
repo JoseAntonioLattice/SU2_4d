@@ -5,6 +5,7 @@ module dynamics
   use pbc, only : ip, im
   implicit none
 
+  type(SU2) :: one
   real(dp), parameter :: pi = acos(-1.0_dp)
 contains
 
@@ -31,8 +32,12 @@ contains
   subroutine cold_start(U)
     use parameters, only : d, L, Lt
     type(SU2), intent(out) :: U(d,L,L,L,Lt)
-    U = SU2_matrix((1.0_dp,0.0_dp),(0.0_dp,0.0_dp))
+    U = one
   end subroutine cold_start
+
+  subroutine create_one()
+    one = SU2_matrix((1.0_dp,0.0_dp),(0.0_dp,0.0_dp))
+  end subroutine create_one
   
   function SU2_ran() 
     type(SU2) :: SU2_ran
@@ -313,4 +318,101 @@ contains
     !U(mu,x(1),x(2),x(3),x(4)) = tr(U(mu,x(1),x(2),x(3),x(4))*dagger(V))* V - U(mu,x(1),x(2),x(3),x(4))
   end subroutine overrelaxation
 
+  function TA(W)
+    type(SU2), intent(in) :: W
+    type(SU2) :: TA
+    TA = (W - dagger(W))/2.0_dp - tr(W - dagger(W))/(4.0_dp) * one
+  end function TA
+
+  function Z(U,x,mu)
+    integer(i4), intent(in) :: x(4), mu
+    type(SU2) :: Z
+    Z = -1.0_dp * TA(U(mu,x(1),x(2),x(3),x(4)) * dagger(staples(U,[x(1),x(2),x(3),x(4)],mu)))
+  end function Z
+
+  subroutine Wilson_flow(U,x,mu)
+    integer(i4), intent(inout) :: x(4), mu
+    type(SU2), intent(in) :: U
+    type(SU2) :: V
+    integer(i4), parameter :: dt = 0.1
+    integer(i4) :: i
+    
+    V = U(mu,x(1),x(2),x(3),x(4))
+    do i = 1, 100
+       V = mat_exp(dt * Z(U,x,mu)) * V
+    end do
+    U(mu,x(1),x(2),x(3),x(4)) = V
+  end subroutine Wilson_flow
+
+  function mat_exp(W) result(res)
+    type(SU2), intent(in) :: W
+    type(SU2) :: res, B, C
+
+    integer, parameter :: n = 2
+    integer, parameter :: lda = 2
+    integer, parameter :: ldvl  = n
+    integer, parameter :: ldvr = n
+    integer, parameter :: lwork = 2*n
+
+    complex(dp), dimension(n,n) :: A
+    complex(dp), dimension(lwork) :: work
+    complex(dp), dimension(n) :: eigenv
+    complex(dp), dimension(ldvl,n) :: vl
+    complex(dp), dimension(ldvr,n) :: vr
+    real(dp), dimension(2*n) :: rwork
+    integer :: info
+
+    A = W%matrix
+    call zgeev('N', 'V', n, A, lda,eigenv, vl, ldvl, vr, ldvr, WORK, lwork, rwork,INFO)
+
+    C%matrix = vr
+    B%matrix = one
+    B%matrix(1,1) = exp(eigenv(1))
+    B%matrix(2,2) = exp(eigenv(2))
+    B%matrix(3,3) = exp(eigenv(3))
+
+    res = C*B*inv(C)
+
+  end function mat_exp
+
+  function Q(U,x,mu,nu)
+    type(SU2) :: Q
+    type(SU2), dimension(:,:,:,:,:), intent(in) :: U
+    integer(i4), intent(in) :: x(4), mu
+    integer(i4), dimension(4) :: x2, x3,x4,x5,x6,x7,x8 
+
+    x2 = ip(x,mu)  ! x + mu
+    x3 = ip(x,nu)  ! x + nu
+    x4 = im(x,mu)  ! x - mu
+    x5 = im(x,nu)  ! x - nu
+    x6 = ip(x4,nu) ! x - mu + nu
+    x7 = im(x4,nu) ! x - mu - nu
+    x8 = im(x2,nu) ! x + mu - nu 
+    Q = plaquette(U,x,mu,nu) + &
+        U(nu,x(1),x(2),x(3),x(4)) * dagger(U(mu,x6(1),x6(2),x6(3),x6(4))) * dagger(U(nu,x4(1),x4(2),x4(3),x4(4))) * U(mu,x4(1),x4(2),x4(3),x4(4)) + &
+        dagger(U(mu,x4(1),x4(2),x4(3),x4(4))) * dagger(U(nu,x7(1),x7(2),x7(3),x7(4))) *  U(mu,x7(1),x7(2),x7(3),x7(4)) *  U(nu,x5(1),x5(2),x5(3),x5(4)) + &
+        dagger(U(nu,x5(1),x5(2),x5(3),x5(4))) * U(mu,x5(1),x5(2),x5(3),x5(4)) *  U(nu,x8(1),x8(2),x8(3),x8(4)) * dagger(U(mu,x(1),x(2),x(3),x(4)))
+         
+  end function Q
+
+  
+  function F(U,x,mu,nu)
+    type(SU2) :: F, top
+    type(SU2), dimension(:,:,:,:,:), intent(in) :: U
+    integer(i4), intent(in) :: x(4), mu
+
+    top = Q(U,x,mu,nu) 
+    F = (top - dagger(top))/8.0_dp
+         
+  end function F
+
+  function dual(A,mu,nu)
+    type(SU2), intent(in) :: A
+    type(SU2) :: dual
+    integer(i4), intent(in) :: mu, nu
+
+    dual%matrix = (0.0_dp,0.0_dp)
+    
+  end function dual
+  
 end module dynamics
