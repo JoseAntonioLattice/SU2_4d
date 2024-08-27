@@ -224,6 +224,18 @@ contains
                 end do
              end do
           end do
+       end do
+       case("overrelaxation")
+       do x1 = 1, L
+          do x2 = 1, L
+             do x3 = 1, L
+                do x4 = 1, Lt
+                   do mu = 1, d
+                      call overrelaxation(U,[x1,x2,x3,x4],mu)
+                   end do
+                end do
+             end do
+          end do
        end do 
     end select
   end subroutine sweeps
@@ -288,5 +300,17 @@ contains
 
   end subroutine heatbath
 
-  
+  subroutine overrelaxation(U,x,mu)
+    type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
+    integer(i4), intent(in) :: mu, x(4)
+    type(SU2) :: sigma,V
+    real(dp) :: alpha
+
+    sigma = staples(U,x,mu)
+    alpha = sqrt(det(sigma))
+    V = sigma/alpha
+    U(mu,x(1),x(2),x(3),x(4)) = V * dagger(U(mu,x(1),x(2),x(3),x(4))) * V
+    !U(mu,x(1),x(2),x(3),x(4)) = tr(U(mu,x(1),x(2),x(3),x(4))*dagger(V))* V - U(mu,x(1),x(2),x(3),x(4))
+  end subroutine overrelaxation
+
 end module dynamics

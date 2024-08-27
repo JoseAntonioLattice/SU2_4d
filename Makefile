@@ -23,7 +23,7 @@ install:
 	./install.sh
 
 load_module:
-
+	module load lamod/gcc/12.2
 
 clean:
 	rm -f $(BIN)/*

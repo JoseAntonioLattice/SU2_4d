@@ -14,7 +14,7 @@ program SU2_4d
   allocate(P(n_measurements))
   call set_periodic_bounds(L,Lt)
   call hot_start(U)
-
+  
   open(unit = 10, file = 'data/Lx='//trim(int2str(L))//'_Lt='&
                          //trim(int2str(Lt))//'_'//trim(algorithm)//'.dat'&
                          ,status = 'unknown')

@@ -20,6 +20,11 @@ module datatypes
      module procedure :: mat_mul
   end interface operator(*)
 
+  interface operator(*)
+     module procedure :: mat_mul_scalar
+  end interface operator(*)
+
+  
   interface operator(/)
      module procedure :: mat_div
   end interface operator(/)
@@ -36,6 +41,14 @@ contains
     type(SU2) :: C
     C%matrix = A%matrix - B%matrix
   end function mat_sub
+
+  function mat_mul_scalar(a,B) result(C)
+    real(dp), intent(in) :: a
+    type(SU2), intent(in) :: B
+    type(SU2) :: C
+    C%matrix = A*B%matrix
+  end function mat_mul_scalar
+
   
   pure function mat_mul(a,b) result(c)
     type(SU2), intent(in) :: a, b
