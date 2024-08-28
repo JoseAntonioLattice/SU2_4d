@@ -39,7 +39,7 @@ contains
     
   end subroutine initialize
 
-  function ip(vector,mu)
+  pure function ip(vector,mu)
     integer, dimension(:), intent(in) :: vector
     integer, intent(in) :: mu
 
@@ -56,7 +56,7 @@ contains
   end function ip
 
 
-  function im(vector,mu)
+  pure function im(vector,mu)
 
     integer, dimension(:), intent(in) :: vector
     integer, intent(in) :: mu

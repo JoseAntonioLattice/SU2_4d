@@ -30,19 +30,19 @@ module datatypes
   end interface operator(/)
 contains
 
-  function mat_sum(A,B) result(C)
+  pure function mat_sum(A,B) result(C)
     type(SU2), intent(in) :: A,B
     type(SU2) :: C
     C%matrix = A%matrix + B%matrix
   end function mat_sum
 
-  function mat_sub(A,B) result(C)
+  pure function mat_sub(A,B) result(C)
     type(SU2), intent(in) :: A,B
     type(SU2) :: C
     C%matrix = A%matrix - B%matrix
   end function mat_sub
 
-  function mat_mul_scalar(a,B) result(C)
+  pure function mat_mul_scalar(a,B) result(C)
     real(dp), intent(in) :: a
     type(SU2), intent(in) :: B
     type(SU2) :: C
@@ -61,7 +61,7 @@ contains
 
   end function mat_mul
 
-  function mat_div(A,b) result(C)
+  pure function mat_div(A,b) result(C)
     type(SU2), intent(in) :: A
     real(dp), intent(in) :: b
     type(SU2) :: C
@@ -74,13 +74,13 @@ contains
     det = (abs(U%matrix(1,1)))**2 + (abs(U%matrix(1,2)))**2 
   end function det
 
-  function tr(U)
+  pure function tr(U)
     type(SU2), intent(in) :: U
     real(dp) :: tr
     tr = 2*real(U%matrix(1,1))
   end function tr
 
-  function dagger(U)
+  pure function dagger(U)
     type(SU2), intent(in) :: U
     type(SU2) :: dagger
     dagger%matrix = transpose(conjg(U%matrix))

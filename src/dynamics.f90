@@ -7,6 +7,8 @@ module dynamics
 
   type(SU2) :: one
   real(dp), parameter :: pi = acos(-1.0_dp)
+  integer(i4), dimension(4,4,4,4) :: levi_civita
+
 contains
 
   ! STARTS
@@ -83,9 +85,23 @@ contains
 
   end function sgn
 
-  function SU2_matrix(a,b)
+  pure function sgn_int(x)
+    integer(i4), intent(in) :: x
+    integer(i4) :: sgn_int
+
+    if( x > 0 )then
+       sgn_int = 1
+    elseif( x < 0)then
+       sgn_int = -1
+    else
+       sgn_int = 0
+    end if
+
+  end function sgn_int
+  
+  pure function SU2_matrix(a,b)
     type(SU2) :: SU2_matrix
-    complex(dp) :: a,b
+    complex(dp), intent(in) :: a,b
 
     SU2_matrix%matrix(1,1) = a
     SU2_matrix%matrix(1,2) = b
@@ -93,10 +109,10 @@ contains
     SU2_matrix%matrix(2,2) =  conjg(a)
   end function SU2_matrix
 
-  function plaquette(U,x,mu,nu)
+  pure function plaquette(U,x,mu,nu)
     type(SU2), dimension(:,:,:,:,:), intent(in) :: U
-    integer(i4), intent(in) :: x(4), mu
-    integer(i4) :: nu,x2(4),x3(4)
+    integer(i4), intent(in) :: x(4), mu, nu
+    integer(i4) :: x2(4),x3(4)
     type(SU2) :: plaquette
 
     x2 = ip(x,mu)
@@ -134,7 +150,7 @@ contains
     P = P/(N*planes*vol)
   end function plaquette_value
   
-  function staples(U,x,mu)
+  pure function staples(U,x,mu)
     use parameters, only: d
     type(SU2), dimension(:,:,:,:,:), intent(in) :: U
     integer(i4), intent(in) :: x(4), mu
@@ -159,7 +175,7 @@ contains
     end do
   end function staples
 
-  function DS(U,Up,x,mu,beta)
+  pure function DS(U,Up,x,mu,beta)
     use parameters, only : N
     type(SU2), dimension(:,:,:,:,:), intent(in) :: U
     type(SU2), intent(in) :: Up
@@ -203,7 +219,6 @@ contains
     type(SU2), dimension(d,L,L,L,Lt), intent(inout) :: U
     real(dp), intent(in) :: beta
     integer(i4) :: x1,x2,x3,x4,mu
-    type(SU2) :: Up
 
     select case(algorithm)
     case("heatbath")
@@ -325,16 +340,17 @@ contains
   end function TA
 
   function Z(U,x,mu)
+    type(SU2), dimension(:,:,:,:,:), intent(in) :: U
     integer(i4), intent(in) :: x(4), mu
     type(SU2) :: Z
-    Z = -1.0_dp * TA(U(mu,x(1),x(2),x(3),x(4)) * dagger(staples(U,[x(1),x(2),x(3),x(4)],mu)))
+    Z = (-1.0_dp) * TA(U(mu,x(1),x(2),x(3),x(4)) * dagger(staples(U,[x(1),x(2),x(3),x(4)],mu)))
   end function Z
 
   subroutine Wilson_flow(U,x,mu)
-    integer(i4), intent(inout) :: x(4), mu
-    type(SU2), intent(in) :: U
+    integer(i4), intent(in) :: x(4), mu
+    type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
     type(SU2) :: V
-    integer(i4), parameter :: dt = 0.1
+    real(dp), parameter :: dt = 0.1_dp
     integer(i4) :: i
     
     V = U(mu,x(1),x(2),x(3),x(4))
@@ -366,19 +382,41 @@ contains
     call zgeev('N', 'V', n, A, lda,eigenv, vl, ldvl, vr, ldvr, WORK, lwork, rwork,INFO)
 
     C%matrix = vr
-    B%matrix = one
+    B = one
     B%matrix(1,1) = exp(eigenv(1))
     B%matrix(2,2) = exp(eigenv(2))
-    B%matrix(3,3) = exp(eigenv(3))
-
+ 
     res = C*B*inv(C)
 
   end function mat_exp
 
-  function Q(U,x,mu,nu)
+  ! -- Returns the inverse of a general squared matrix A
+  function inv(A) result(Ainv)
+    implicit none
+    type(SU2)::  A
+    type(SU2) :: Ainv
+    complex(dp)            :: work(2)     ! work array for LAPACK                                                                      
+    integer         :: n,info,ipiv(2)     ! pivot indices
+    ! Store A in Ainv to prevent it from being overwritten by LAPACK
+    Ainv%matrix = A%matrix
+    n = 2
+    ! SGETRF computes an LU factorization of a general M-by-N matrix A
+    
+    ! using partial pivoting with row interchanges.
+    
+    call zGETRF(n,n,Ainv%matrix,n,ipiv,info)
+    if (info.ne.0) stop 'Matrix is numerically singular!'
+    ! SGETRI computes the inverse of a matrix using the LU factorization
+    
+    ! computed by SGETRF.                                                                                                                    
+    call zGETRI(n,Ainv%matrix,n,ipiv,work,n,info)
+    if (info.ne.0) stop 'Matrix inversion failed!'
+  end function inv
+  
+  pure function Q(U,x,mu,nu)
     type(SU2) :: Q
     type(SU2), dimension(:,:,:,:,:), intent(in) :: U
-    integer(i4), intent(in) :: x(4), mu
+    integer(i4), intent(in) :: x(4), mu, nu
     integer(i4), dimension(4) :: x2, x3,x4,x5,x6,x7,x8 
 
     x2 = ip(x,mu)  ! x + mu
@@ -389,30 +427,70 @@ contains
     x7 = im(x4,nu) ! x - mu - nu
     x8 = im(x2,nu) ! x + mu - nu 
     Q = plaquette(U,x,mu,nu) + &
-        U(nu,x(1),x(2),x(3),x(4)) * dagger(U(mu,x6(1),x6(2),x6(3),x6(4))) * dagger(U(nu,x4(1),x4(2),x4(3),x4(4))) * U(mu,x4(1),x4(2),x4(3),x4(4)) + &
-        dagger(U(mu,x4(1),x4(2),x4(3),x4(4))) * dagger(U(nu,x7(1),x7(2),x7(3),x7(4))) *  U(mu,x7(1),x7(2),x7(3),x7(4)) *  U(nu,x5(1),x5(2),x5(3),x5(4)) + &
-        dagger(U(nu,x5(1),x5(2),x5(3),x5(4))) * U(mu,x5(1),x5(2),x5(3),x5(4)) *  U(nu,x8(1),x8(2),x8(3),x8(4)) * dagger(U(mu,x(1),x(2),x(3),x(4)))
+         U(nu,x(1),x(2),x(3),x(4)) * dagger(U(mu,x6(1),x6(2),x6(3),x6(4))) * &
+         dagger(U(nu,x4(1),x4(2),x4(3),x4(4))) * U(mu,x4(1),x4(2),x4(3),x4(4)) + &
+         dagger(U(mu,x4(1),x4(2),x4(3),x4(4))) * dagger(U(nu,x7(1),x7(2),x7(3),x7(4))) * &
+         U(mu,x7(1),x7(2),x7(3),x7(4)) *  U(nu,x5(1),x5(2),x5(3),x5(4)) + &
+         dagger(U(nu,x5(1),x5(2),x5(3),x5(4))) * U(mu,x5(1),x5(2),x5(3),x5(4)) * &
+         U(nu,x8(1),x8(2),x8(3),x8(4)) * dagger(U(mu,x(1),x(2),x(3),x(4)))
          
   end function Q
-
   
-  function F(U,x,mu,nu)
+  pure function F(U,x,mu,nu)
     type(SU2) :: F, top
     type(SU2), dimension(:,:,:,:,:), intent(in) :: U
-    integer(i4), intent(in) :: x(4), mu
+    integer(i4), intent(in) :: x(4), mu, nu
 
     top = Q(U,x,mu,nu) 
     F = (top - dagger(top))/8.0_dp
          
   end function F
 
-  function dual(A,mu,nu)
-    type(SU2), intent(in) :: A
-    type(SU2) :: dual
-    integer(i4), intent(in) :: mu, nu
+  function top_den(U,x)
+    type(SU2), dimension(:,:,:,:,:), intent(in) :: U
+    complex(dp) :: top_den
+    integer(i4), dimension(4) :: x
+    integer(i4) :: mu, nu, rho, sigma 
+    complex(dp), dimension(4,4,4,4) :: QQ
 
-    dual%matrix = (0.0_dp,0.0_dp)
+    QQ = 0.0_dp
+    forall(mu = 1:4, nu = 1:4, rho=1:4, sigma=1:4, levi_civita(mu,nu,rho,sigma) /= 0)
+       QQ(mu,nu,rho,sigma) = levi_civita(mu,nu,rho,sigma)*tr(F(U,x,mu,nu)*F(U,x,rho,sigma))
+    end forall
+    top_den = -sum(QQ)/(32*pi**2)
+  end function top_den
+
+  !function dual(A,mu,nu)
+  !  type(SU2), intent(in) :: A
+  !  type(SU2) :: dual
+  !  integer(i4), intent(in) :: mu, nu
+  !  dual%matrix = (0.0_dp,0.0_dp)
+  !end function dual
+
+  subroutine create_levicivita
+    integer(i4) :: i,j,k,l
+    do i = 1, 4
+       do j = 1, 4
+          do k = 1, 4
+             do l = 1, 4
+                levi_civita(i,j,k,l) = feps([i,j,k,l])
+             end do
+          end do
+       end do
+    end do
+  end subroutine create_levicivita
+
+  function feps(x) result(f)
+    integer(i4) :: f
+    integer(i4), intent(in) :: x(4)
+    integer(i4) :: i1, i2
+    f = 1
+    do i1 = 1,  3
+       do i2 = i1 + 1, 4
+          f = f * sgn_int(x(i2) - x(i1))
+       end do
+    end do
     
-  end function dual
+  end function feps
   
 end module dynamics
