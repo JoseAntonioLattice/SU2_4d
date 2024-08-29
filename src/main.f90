@@ -12,6 +12,8 @@ program SU2_4d
   allocate(U(d,L,L,L,Lt))
   allocate(beta(n_beta))
   allocate(P(n_measurements))
+  allocate(Q_den(n_measurements))
+  call create_levicivita()
   call set_periodic_bounds(L,Lt)
   call hot_start(U)
   
@@ -22,9 +24,11 @@ program SU2_4d
      beta(i) = bi + (bf - bi)/(N_beta - 1) * (i-1)
      call create_measurements_file(L,Lt,beta(i),algorithm,.true.)
      call thermalization(U,beta(i))
-     call measurements(U,beta(i),P)
+     call measurements(U,beta(i),P,Q_den)
      call max_jackknife_error_2(P,avr_P,err_P,bins)
-     print*, beta(i),avr_P,err_P
+     call max_jackknife_error_2(Q_den%re,avr_Qden%re,err_Qden%re,bins)
+     call max_jackknife_error_2(Q_den%im,avr_Qden%im,err_Qden%im,bins)
+     print*, beta(i),avr_P,err_P, avr_Qden%re, err_Qden%re,avr_Qden%im, err_Qden%im
      write(10,*) beta(i), avr_P,err_P
      flush(10)
   end do

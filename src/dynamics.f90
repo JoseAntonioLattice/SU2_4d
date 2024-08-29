@@ -198,11 +198,12 @@ contains
     end do
   end subroutine thermalization
 
-  subroutine measurements(U,beta,P)
+  subroutine measurements(U,beta,P,Q_den)
     use parameters, only : N_measurements, N_skip
     type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
     real(dp), intent(in) :: beta
     real(dp), dimension(N_measurements), intent(out) :: P
+    complex(dp), dimension(N_measurements), intent(out) :: Q_den
     integer(i4) :: i_sweeps, i_skip
 
     do i_sweeps = 1, N_measurements
@@ -210,7 +211,8 @@ contains
           call sweeps(U,beta)
        end do
        P(i_sweeps) = plaquette_value(U)
-       write(100,*) P(i_sweeps)
+       q_den(i_sweeps) = topological_charge_density(U)
+       write(100,*) P(i_sweeps), q_den(i_sweeps)
     end do
   end subroutine measurements
   
@@ -492,5 +494,26 @@ contains
     end do
     
   end function feps
+
+  function topological_charge_density(U)
+    use parameters, only: L,Lt,d
+    type(SU2), dimension(d,L,L,L,Lt), intent(in) :: U
+    integer(i4) :: x, y, z, t
+    complex(dp) :: topological_charge_density
+
+    topological_charge_density = 0.0_dp
+    do x = 1, L
+       do y = 1, L
+          do z = 1, L
+             do t = 1, Lt
+                topological_charge_density = topological_charge_density + top_den(U,[x,y,z,t])
+             end do
+          end do
+       end do
+    end do
+    topological_charge_density = topological_charge_density/(L**3*Lt)
+                   
+  end function topological_charge_density
+
   
 end module dynamics
