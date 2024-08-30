@@ -9,10 +9,10 @@ module parameters
   integer(i4) :: N_thermalization
   integer(i4) :: N_measurements
   integer(i4) :: N_skip
-  real(dp)    :: bi, bf
+  real(dp),  dimension(2) :: b_array 
   integer(i4) :: N_beta
   character(99):: algorithm
-  namelist /input_parameters/ L,Lt,N_thermalization,N_measurements,N_skip,bi,bf,N_beta,algorithm
+  namelist /input_parameters/ L,Lt,N_thermalization,N_measurements,N_skip,b_array,N_beta,algorithm
 
 contains
   
@@ -21,6 +21,7 @@ contains
     integer(i4) :: unit
 
     read(*,'(a)') filename
+    write(*,'(2a)') 'User typed:', trim(filename)
     open(newunit = unit, file = trim(filename), status = 'old')
     read(unit, nml = input_parameters)
     write(*,nml = input_parameters)
