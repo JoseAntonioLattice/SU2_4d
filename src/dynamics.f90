@@ -124,7 +124,7 @@ contains
          dagger(U(nu, x(1), x(2), x(3), x(4))) 
   end function plaquette
   
-  function plaquette_value(U) result(P)
+  pure function plaquette_value(U) result(P)
     use parameters, only : d, N, L, Lt
     type(SU2), dimension(d,L,L,L,Lt), intent(in) :: U
     real(dp) :: P
@@ -198,12 +198,13 @@ contains
     end do
   end subroutine thermalization
 
-  subroutine measurements(U,beta,P,Q_den)
+  subroutine measurements(U,beta,P,Q_den, E_den)
     use parameters, only : N_measurements, N_skip
     type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
     real(dp), intent(in) :: beta
     real(dp), dimension(N_measurements), intent(out) :: P
-    complex(dp), dimension(N_measurements), intent(out) :: Q_den
+    real(dp), dimension(N_measurements), intent(out) :: Q_den
+    real(dp), dimension(N_measurements,100), intent(out) :: E_den
     integer(i4) :: i_sweeps, i_skip
 
     do i_sweeps = 1, N_measurements
@@ -212,6 +213,7 @@ contains
        end do
        P(i_sweeps) = plaquette_value(U)
        q_den(i_sweeps) = topological_charge_density(U)
+       call smooth_configuration(U,E_den(i_sweeps,:))
        write(100,*) P(i_sweeps), q_den(i_sweeps)
     end do
   end subroutine measurements
@@ -335,33 +337,55 @@ contains
     !U(mu,x(1),x(2),x(3),x(4)) = tr(U(mu,x(1),x(2),x(3),x(4))*dagger(V))* V - U(mu,x(1),x(2),x(3),x(4))
   end subroutine overrelaxation
 
-  function TA(W)
+  pure function TA(W)
     type(SU2), intent(in) :: W
     type(SU2) :: TA
     TA = (W - dagger(W))/2.0_dp - tr(W - dagger(W))/(4.0_dp) * one
   end function TA
 
-  function Z(U,x,mu)
+  pure function Z(U,x,mu)
     type(SU2), dimension(:,:,:,:,:), intent(in) :: U
     integer(i4), intent(in) :: x(4), mu
     type(SU2) :: Z
     Z = (-1.0_dp) * TA(U(mu,x(1),x(2),x(3),x(4)) * dagger(staples(U,[x(1),x(2),x(3),x(4)],mu)))
   end function Z
 
-  subroutine Wilson_flow(U,x,mu)
+  subroutine Wilson_flow(U,x,mu,dt)
     integer(i4), intent(in) :: x(4), mu
     type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
     type(SU2) :: V
-    real(dp), parameter :: dt = 0.1_dp
-    integer(i4) :: i
+    real(dp), intent(in) :: dt
     
     V = U(mu,x(1),x(2),x(3),x(4))
-    do i = 1, 100
-       V = mat_exp(dt * Z(U,x,mu)) * V
-    end do
+   
+    V = mat_exp(dt * Z(U,x,mu)) * V
+
     U(mu,x(1),x(2),x(3),x(4)) = V
   end subroutine Wilson_flow
 
+  subroutine smooth_configuration(U,E_den)
+    use parameters, only : L,Lt,d
+    type(SU2), dimension(d,L,L,L,Lt), intent(inout) :: U
+    real(dp), parameter :: dt = 0.1_dp
+    integer(i4) :: x1,x2,x3,x4,mu,t
+    real(dp), dimension(:), intent(out) :: E_den
+
+    do t = 1, 100
+       do x1 = 1, L
+          do x2 = 1, L
+             do x3 = 1, L
+                do x4 = 1, Lt
+                   do mu = 1, d
+                      call Wilson_flow(U,[x1,x2,x3,x4],mu,dt)
+                   end do
+                end do
+             end do
+          end do
+       end do
+       E_den(t) = (t*dt)**2 * E(U)
+    end do
+  end subroutine smooth_configuration
+  
   function mat_exp(W) result(res)
     type(SU2), intent(in) :: W
     type(SU2) :: res, B, C
@@ -448,26 +472,44 @@ contains
          
   end function F
 
-  function top_den(U,x)
+  pure function E(U)
+    use parameters, only: d,L,Lt
+    real(dp) :: E
+    type(SU2), intent(in), dimension(d,L,L,L,Lt) :: U
+    integer(i4) :: x1,x2,x3,x4,x(4), mu, nu
+
+    E = 0.0_dp
+    do x1 = 1, L
+       do x2 = 1, L
+          do x3 = 1, L
+             do x4 = 1, Lt
+                x = [x1,x2,x3,x4]
+                do mu = 1, d
+                   do nu = 1, d
+                      E = E + tr(F(U,x,mu,nu)*F(U,x,mu,nu))
+                   end do
+                end do
+             end do
+          end do
+       end do
+    end do
+    E = E/(4*L**3*Lt)
+  end function E
+  
+  pure function top_den(U,x)
     type(SU2), dimension(:,:,:,:,:), intent(in) :: U
-    complex(dp) :: top_den
-    integer(i4), dimension(4) :: x
+    real(dp) :: top_den
+    integer(i4), dimension(4), intent(in) :: x
     integer(i4) :: mu, nu, rho, sigma 
-    complex(dp), dimension(4,4,4,4) :: QQ
+    real(dp), dimension(4,4,4,4) :: QQ
 
     QQ = 0.0_dp
     forall(mu = 1:4, nu = 1:4, rho=1:4, sigma=1:4, levi_civita(mu,nu,rho,sigma) /= 0)
        QQ(mu,nu,rho,sigma) = levi_civita(mu,nu,rho,sigma)*tr(F(U,x,mu,nu)*F(U,x,rho,sigma))
     end forall
-    top_den = -sum(QQ)/(32*pi**2)
+        
+    top_den = -sum(QQ, mask = levi_civita /= 0)/(32*pi**2)
   end function top_den
-
-  !function dual(A,mu,nu)
-  !  type(SU2), intent(in) :: A
-  !  type(SU2) :: dual
-  !  integer(i4), intent(in) :: mu, nu
-  !  dual%matrix = (0.0_dp,0.0_dp)
-  !end function dual
 
   subroutine create_levicivita
     integer(i4) :: i,j,k,l
@@ -482,7 +524,7 @@ contains
     end do
   end subroutine create_levicivita
 
-  function feps(x) result(f)
+  pure function feps(x) result(f)
     integer(i4) :: f
     integer(i4), intent(in) :: x(4)
     integer(i4) :: i1, i2
@@ -495,11 +537,11 @@ contains
     
   end function feps
 
-  function topological_charge_density(U)
+  pure function topological_charge_density(U)
     use parameters, only: L,Lt,d
     type(SU2), dimension(d,L,L,L,Lt), intent(in) :: U
     integer(i4) :: x, y, z, t
-    complex(dp) :: topological_charge_density
+    real(dp) :: topological_charge_density
 
     topological_charge_density = 0.0_dp
     do x = 1, L
@@ -511,7 +553,7 @@ contains
           end do
        end do
     end do
-    topological_charge_density = topological_charge_density/(L**3*Lt)
+    topological_charge_density = topological_charge_density!/(L**3*Lt)
                    
   end function topological_charge_density
 
