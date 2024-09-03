@@ -1,0 +1,51 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\author{José Antonio García Hernández}
+\title{4 d SU(2) lattice gauge theory}
+\begin{document}
+\maketitle
+\section{Wilson Flow}
+\begin{equation}
+    \frac{d}{dt}V_{\mu}(x,t) = Z_{\mu}(x,t)V_{\mu}(x,t) , \ \ \  \left. {V_{\mu}(x,t)}\right|_{t = 0} = U_{\mu}(x)
+\end{equation}
+
+\begin{equation}
+         Z_{\mu}(x) = -\{U_{\mu}(x)\Sigma_{\mu}^{\dagger}(x)\}_{\text{TA}}
+\end{equation}
+
+\begin{equation}
+    W_{\text{TA}} = \frac{W - W^{\dagger}}{2} - \frac{\text{Tr} (W - W^{\dagger})}{2N}
+\end{equation}
+
+\begin{equation}
+    V_{\mu}(x,t+\varepsilon) = \exp\{\varepsilon Z_{\mu}(x,t)\}V_{\mu}(x,t)
+\end{equation}
+
+\begin{equation}
+    E(x,t) = \frac{1}{4} \hat{F}_{\mu\nu}^a(x,t) \hat{F}_{\mu\nu}^a(x,t)
+\end{equation}
+
+\begin{equation}
+    \hat{F}_{\mu\nu}(x) = \frac{1}{8}\left[ Q_{\mu\nu}(x) -  Q_{\mu\nu}^{\dagger}(x)\right]
+\end{equation}
+
+\begin{eqnarray}
+    Q_{\mu\nu}(x) & = & U_{\mu}(x)U_{\nu}(x+\hat{\mu})U_{\mu}^{-1}(x+\hat{\nu})U_{\nu}^{-1}(x)  +  \nonumber\\
+    & & U_{\nu}(x)U_{\mu}^{-1}(x-\hat{\mu}+\hat{\nu})U_{\nu}^{-1}(x-\hat{\mu})U_{\mu}(x-\hat{\mu})  + \nonumber\\ 
+    & & U_{\mu}^{-1}(x-\hat{\mu})U_{\nu}^{-1}(x-\hat{\mu}-\hat{\nu})U_{\mu}(x-\hat{\mu}-\hat{\nu})U_{\nu}(x-\hat{\nu})+\nonumber\\
+    &  & U_{\nu}^{-1}(x-\hat{\nu}) U_{\mu}(x-\hat{\nu})U_{\nu}(x+\hat{\mu}-\hat{\nu})U_{\mu}^{-1}(x)
+\end{eqnarray}
+
+\begin{equation}
+    \mathcal{E}(t) = t^2 \langle E(x,t)\rangle
+\end{equation}
+
+\section{Topological charge}
+\begin{equation}
+    q(x,t) = -\frac{1}{32\pi^2}\varepsilon_{\mu\nu\rho\sigma} \text{Tr} \left\{ \hat{F}_{\mu\nu}(x,t)\hat{F}_{\rho\sigma}(x,t)\right\}
+\end{equation}
+\end{document}

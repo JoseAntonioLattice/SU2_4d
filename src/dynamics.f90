@@ -213,7 +213,7 @@ contains
        end do
        P(i_sweeps) = plaquette_value(U)
        q_den(i_sweeps) = topological_charge_density(U)
-       call smooth_configuration(U,E_den(i_sweeps,:))
+       call smooth_configuration(U)
        write(100,*) P(i_sweeps), q_den(i_sweeps)
     end do
   end subroutine measurements
@@ -353,24 +353,24 @@ contains
   subroutine Wilson_flow(U,x,mu,dt)
     integer(i4), intent(in) :: x(4), mu
     type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
-    type(SU2) :: V
+    !type(SU2) :: V
     real(dp), intent(in) :: dt
     
-    V = U(mu,x(1),x(2),x(3),x(4))
+    !V = U(mu,x(1),x(2),x(3),x(4))
    
-    V = mat_exp(dt * Z(U,x,mu)) * V
+    U(mu,x(1),x(2),x(3),x(4)) = mat_exp(dt * Z(U,x,mu)) *  U(mu,x(1),x(2),x(3),x(4))
 
-    U(mu,x(1),x(2),x(3),x(4)) = V
+
   end subroutine Wilson_flow
 
-  subroutine smooth_configuration(U,E_den)
+  subroutine smooth_configuration(U)
     use parameters, only : L,Lt,d
     type(SU2), dimension(d,L,L,L,Lt), intent(inout) :: U
     real(dp), parameter :: dt = 0.1_dp
-    integer(i4) :: x1,x2,x3,x4,mu,t
-    real(dp), dimension(:), intent(out) :: E_den
+    integer(i4) :: x1,x2,x3,x4,mu!,t
+    !real(dp), dimension(:), intent(out) :: E_den
 
-    do t = 1, 100
+    !do t = 1, 100
        do x1 = 1, L
           do x2 = 1, L
              do x3 = 1, L
@@ -382,8 +382,8 @@ contains
              end do
           end do
        end do
-       E_den(t) = (t*dt)**2 * E(U)
-    end do
+     !  E_den(t) = (t*dt)**2 * E(U)
+    !end do
   end subroutine smooth_configuration
   
   function mat_exp(W) result(res)
@@ -503,7 +503,7 @@ contains
     integer(i4) :: mu, nu, rho, sigma 
     real(dp), dimension(4,4,4,4) :: QQ
 
-    QQ = 0.0_dp
+    !QQ = 0.0_dp
     forall(mu = 1:4, nu = 1:4, rho=1:4, sigma=1:4, levi_civita(mu,nu,rho,sigma) /= 0)
        QQ(mu,nu,rho,sigma) = levi_civita(mu,nu,rho,sigma)*tr(F(U,x,mu,nu)*F(U,x,rho,sigma))
     end forall
