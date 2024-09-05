@@ -9,10 +9,12 @@ module parameters
   integer(i4) :: N_thermalization
   integer(i4) :: N_measurements
   integer(i4) :: N_skip
+  integer(i4) :: N_time
+  real(dp) :: dt
   real(dp),  dimension(2) :: b_array 
   integer(i4) :: N_beta
   character(99):: algorithm
-  namelist /input_parameters/ L,Lt,N_thermalization,N_measurements,N_skip,b_array,N_beta,algorithm
+  namelist /input_parameters/ L,Lt,N_thermalization,N_measurements,N_skip,n_time, dt,b_array,N_beta,algorithm
 
 contains
   

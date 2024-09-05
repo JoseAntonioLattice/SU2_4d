@@ -1,9 +1,11 @@
 &input_parameters
-L = 3
-Lt = 3
+L = 5
+Lt = 5
 N_thermalization = 500
 N_measurements = 100
 N_skip = 10
+N_time = 400
+dt = 0.01
 N_beta = 100
 b_array = 0.1, 10.0
 algorithm = 'heatbath' !Choose between "metropolis" or "heatbath"

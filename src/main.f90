@@ -11,46 +11,42 @@ program SU2_4d
   call read_input()
   call read_beta()
   allocate(U(d,L,L,L,Lt))
-  
+ 
   !allocate(beta(n_beta))
   
-  allocate(P(n_measurements))
-  allocate(Q_den(n_measurements))
-  allocate(Eden(n_measurements,100))
+  allocate(P(n_measurements,0:n_time))
+  allocate(Q_den(n_measurements,0:n_time))
+  allocate(Eden(n_measurements,0:n_time))
   call create_levicivita()
+  call create_one()
+ 
   call set_periodic_bounds(L,Lt)
   call hot_start(U)
-  !beta = 0.1_dp
+ 
   open(unit = 10, file = 'data/Lx='//trim(int2str(L))//'_Lt='&
                          //trim(int2str(Lt))//'_'//trim(algorithm)//'.dat'&
                          ,status = 'unknown')
 
   open(unit = 200, file = 'data/wilson.dat', status = 'unknown')
   do i_b =1, size(beta)
-     do i = 1, N_measurements!size(beta)
-        !   !beta(i) = bi + (bf - bi)/(N_beta - 1) * (i-1)
-        !call create_measurements_file(L,Lt,beta(i),algorithm,.true.)
+     do i = 1, N_measurements
         call hot_start(U)
         call thermalization(U,beta(i_b))
-        !call measurements(U,beta(i),P,Q_den,Eden)
-        !call max_jackknife_error_2(P,avr_P,err_P,bins)
-        !call max_jackknife_error_2(Q_den,avr_Qden,err_Qden,bins)
-        call smooth_configuration(U)
-        do i_t = 1, 100
-           !call max_jackknife_error_2(Eden(:,i_t),avr_eden,err_eden,bins)
-           
-           Eden(i,i_t) = (i_t*0.1_dp)**2 * E(U)
-           !write(200,*) i_t*0.1_dp,avr_eden,err_eden
+        Eden(i,0) = energy_density(U)
+        P(i,0) =  plaquette_value(U)
+        q_den(i,0) =  topological_charge(U)
+        do i_t = 1, N_time
+           call sweeps(U,beta(i_b),'wilson_flow')
+           Eden(i,i_t) = energy_density(U)
+           P(i,i_t) =  plaquette_value(U)
+           q_den(i,i_t) =  topological_charge(U)
         end do
-        
-        
-        !print*, beta(i),avr_P,err_P, avr_Qden, err_Qden
-        !write(10,*) beta(i), avr_P,err_P
-        !flush(10)
      end do
-     do i_t = 1, 100
+     do i_t = 0, n_time
         call max_jackknife_error_2(Eden(:,i_t),avr_eden,err_eden,bins)
-        write(200,*) i_t*0.1_dp,avr_eden,err_eden
+        call max_jackknife_error_2(P(:,i_t),avr_P,err_P,bins)
+        call max_jackknife_error_2(Q_den(:,i_t),avr_Qden,err_Qden,bins)
+        write(200,*) i_t*dt,avr_P,err_P,avr_qden,err_Qden,avr_eden,err_eden
      end do
   end do
 end program SU2_4d

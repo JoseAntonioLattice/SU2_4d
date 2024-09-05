@@ -4,8 +4,8 @@ module arrays
   implicit none
 
   type(SU2), allocatable, dimension(:,:,:,:,:) :: U
-  real(dp), allocatable, dimension(:) :: beta, P
-  real(dp),allocatable, dimension(:) :: Q_den 
+  real(dp), allocatable, dimension(:) :: beta
+  real(dp),allocatable, dimension(:,:) :: P, Q_den 
   real(dp) :: avr_P, err_P
   real(dp) :: avr_Qden, err_Qden,avr_eden, err_eden
   real(dp), allocatable, dimension(:,:) :: Eden
