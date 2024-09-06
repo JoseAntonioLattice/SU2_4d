@@ -22,22 +22,29 @@ program SU2_4d
  
   call set_periodic_bounds(L,Lt)
   call hot_start(U)
- 
+
+  print*, U(1,1,1,1,1)
+  print*,  aimag(U(1,1,1,1,1)%matrix)
+  call wilson_flow(U,[1,1,1,1],1)
+  print*,U(1,1,1,1,1) 
+  print*,  abs(U(1,1,1,1,1)%matrix(1,1))**2 +  abs(U(1,1,1,1,1)%matrix(1,2))**2 
+  
   open(unit = 10, file = 'data/Lx='//trim(int2str(L))//'_Lt='&
                          //trim(int2str(Lt))//'_'//trim(algorithm)//'.dat'&
                          ,status = 'unknown')
 
   open(unit = 200, file = 'data/wilson.dat', status = 'unknown')
+  goto 100
   do i_b =1, size(beta)
      do i = 1, N_measurements
         call hot_start(U)
         call thermalization(U,beta(i_b))
-        Eden(i,0) = energy_density(U)
+        Eden(i,0) = E(U)
         P(i,0) =  plaquette_value(U)
         q_den(i,0) =  topological_charge(U)
         do i_t = 1, N_time
            call sweeps(U,beta(i_b),'wilson_flow')
-           Eden(i,i_t) = energy_density(U)
+           Eden(i,i_t) = E(U)
            P(i,i_t) =  plaquette_value(U)
            q_den(i,i_t) =  topological_charge(U)
         end do
@@ -49,4 +56,5 @@ program SU2_4d
         write(200,*) i_t*dt,avr_P,err_P,avr_qden,err_Qden,avr_eden,err_eden
      end do
   end do
+  100 print*, 'se acabó'
 end program SU2_4d

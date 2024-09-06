@@ -485,6 +485,17 @@ contains
          
   end function F
 
+    
+  pure function F_plaquette(U,x,mu,nu)
+    type(SU2) :: F_plaquette, plaq
+    type(SU2), dimension(:,:,:,:,:), intent(in) :: U
+    integer(i4), intent(in) :: x(4), mu, nu
+
+    plaq = plaquette(U,x,mu,nu) 
+    F_plaquette%matrix = aimag(plaq%matrix)
+         
+  end function F_plaquette
+  
   pure function E(U)
     use parameters, only: d,L,Lt
     real(dp) :: E
@@ -499,7 +510,7 @@ contains
                 x = [x1,x2,x3,x4]
                 do mu = 1, d
                    do nu = 1, d
-                      E = E + tr(F(U,x,mu,nu)*F(U,x,mu,nu))
+                      E = E + tr(F_plaquette(U,x,mu,nu)*F_plaquette(U,x,mu,nu))
                    end do
                 end do
              end do
@@ -518,10 +529,10 @@ contains
 
     QQ = 0.0_dp
     forall(mu = 1:4, nu = 1:4, rho=1:4, sigma=1:4, levi_civita(mu,nu,rho,sigma) /= 0)
-       QQ(mu,nu,rho,sigma) = levi_civita(mu,nu,rho,sigma)*tr(F(U,x,mu,nu)*F(U,x,rho,sigma))
+       QQ(mu,nu,rho,sigma) = levi_civita(mu,nu,rho,sigma)*tr(F_plaquette(U,x,mu,nu)*F_plaquette(U,x,rho,sigma))
     end forall
         
-    top_den = -sum(QQ, mask = levi_civita /= 0)/(32*pi**2)
+    top_den = sum(QQ, mask = levi_civita /= 0)/(32*pi**2)
   end function top_den
 
   subroutine create_levicivita
@@ -567,7 +578,7 @@ contains
           end do
        end do
     end do
-    topological_charge = topological_charge
+    !topological_charge = topological_charge
                    
   end function topological_charge
 
