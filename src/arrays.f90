@@ -31,4 +31,14 @@ contains
     print*, beta
     
   end subroutine read_beta
+
+  subroutine reserve_memory
+    use parameters
+    allocate(U(d,L,L,L,Lt))
+    allocate(P(n_measurements,0:n_time))
+    allocate(Q_den(n_measurements,0:n_time))
+    allocate(Eden(n_measurements,0:n_time))
+
+  end subroutine reserve_memory
+  
 end module arrays

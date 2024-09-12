@@ -1,12 +1,13 @@
 &input_parameters
-L = 5
-Lt = 5
-N_thermalization = 500
-N_measurements = 100
+L = 10
+Lt = 10
+N_thermalization = 100
+N_measurements = 50
 N_skip = 10
-N_time = 400
+N_time = 1000
 dt = 0.01
 N_beta = 100
 b_array = 0.1, 10.0
 algorithm = 'heatbath' !Choose between "metropolis" or "heatbath"
+smoothing_method = 'gradient_flow' !Choose between "cooling" or "gradient_flow" 
 /
