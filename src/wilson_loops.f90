@@ -42,7 +42,7 @@ contains
          dagger(U(nu,x5(1),x5(2),x5(3),x5(4))) * U(mu,x5(1),x5(2),x5(3),x5(4)) * &
          U(nu,x8(1),x8(2),x8(3),x8(4)) * dagger(U(mu,x(1),x(2),x(3),x(4)))
 
-  end function CLOVER
+  end function clover
 
   pure function staples(U,x,mu)
     use parameters, only: d
@@ -55,17 +55,16 @@ contains
     staples%matrix = 0.0_dp
     x3 = ip(x,mu) ! x + mu
     do nu = 1, d
-       if( nu .ne. mu) then
-          x2 = ip( x,nu) ! x + nu
-          x4 = im( x,nu) ! x - nu
-          x5 = im(x3,nu) ! x + mu + nu
-          staples = staples + U(nu, x(1), x(2), x(3), x(4)) *&
-                              U(mu,x2(1),x2(2),x2(3),x2(4)) *&
-                       dagger(U(nu,x3(1),x3(2),x3(3),x3(4)))+&
-                       dagger(U(nu,x4(1),x4(2),x4(3),x4(4)))*&
-                              U(mu,x4(1),x4(2),x4(3),x4(4)) *&
-                              U(nu,x5(1),x5(2),x5(3),x5(4))
-       end if
+       if( nu == mu) cycle
+       x2 = ip( x,nu) ! x + nu
+       x4 = im( x,nu) ! x - nu
+       x5 = im(x3,nu) ! x + mu + nu
+       staples = staples + U(nu, x(1), x(2), x(3), x(4)) *&
+                           U(mu,x2(1),x2(2),x2(3),x2(4)) *&
+                    dagger(U(nu,x3(1),x3(2),x3(3),x3(4)))+&
+                    dagger(U(nu,x4(1),x4(2),x4(3),x4(4)))*&
+                           U(mu,x4(1),x4(2),x4(3),x4(4)) *&
+                           U(nu,x5(1),x5(2),x5(3),x5(4))
     end do
   end function staples
     

@@ -35,7 +35,7 @@ contains
           call sweeps(U,beta,algorithm)
        end do
        P(i_sweeps) = plaquette_value(U)
-       q_den(i_sweeps) = topological_charge(U,definition)
+       q_den(i_sweeps) = topological_charge(U)
        E_den(i_sweeps) = E(U,definition)
        write(100,*) P(i_sweeps), q_den(i_sweeps), E_den(i_sweeps)
     end do
@@ -55,9 +55,9 @@ contains
     write(out_smooth,*) 0, P(0), q_den(0)
     do i_t = 1, N_time
        call sweeps(U,beta,trim(smoothing_method))
-       Eden(i_t) = 0.0_dp!E(U,'clover')
+       Eden(i_t) = 0.0_dp
        P(i_t) =  plaquette_value(U)
-       q_den(i_t) =  topological_charge(U,'clover')
+       q_den(i_t) =  topological_charge(U)
        write(out_smooth,*) i_t, P(i_t), q_den(i_t)
        flush(out_smooth)
     end do

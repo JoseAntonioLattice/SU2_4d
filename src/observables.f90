@@ -116,35 +116,25 @@ contains
     E = -E/(2*Vol)
   end function E
   
-  pure function top_den(U,x,definition)
+  pure function top_den(U,x)
     type(SU2), dimension(:,:,:,:,:), intent(in) :: U
     real(dp) :: top_den
     integer(i4), dimension(4), intent(in) :: x
-    character(*), intent(in) :: definition
-    integer(i4) :: ii, mu, nu, rho, sigma 
-    real(dp), dimension(24) :: QQ
-    real(dp), parameter :: pi = acos(-1.0_dp)
     type(SU2) :: clov1, clov2, clov3
+    integer(i4), parameter :: mu = 1, nu = 2, rho = 3, sigma = 4
     
-    mu    = 1
-    nu    = 2
-    rho   = 3
-    sigma = 4
     clov1 = clover(U,x,rho,sigma)
     clov2 = clover(U,x,nu ,sigma)
     clov3 = clover(U,x,nu ,rho  )
     top_den = real(tr( clover(U,x,mu,nu )   * (clov1 - dagger(clov1)) )) &
              -real(tr( clover(U,x,mu,rho)   * (clov2 - dagger(clov2)) )) &
              +real(tr( clover(U,x,mu,sigma) * (clov3 - dagger(clov3)) ))  
-    
-        
-    !top_den = -top_den/(128*pi**2)
+
   end function top_den
   
-  pure function topological_charge(U,definition)
+  pure function topological_charge(U)
     use parameters, only: L,Lt,d
     type(SU2), dimension(d,L,L,L,Lt), intent(in) :: U
-    character(*), intent(in) :: definition
     integer(i4) :: x, y, z, t
     real(dp) :: topological_charge
     real(dp), parameter :: pi = acos(-1.0_dp)
@@ -153,7 +143,7 @@ contains
        do y = 1, L
           do z = 1, L
              do t = 1, Lt
-                topological_charge = topological_charge + top_den(U,[x,y,z,t],definition)
+                topological_charge = topological_charge + top_den(U,[x,y,z,t])
              end do
           end do
        end do
