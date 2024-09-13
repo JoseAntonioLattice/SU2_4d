@@ -70,19 +70,22 @@ contains
   end function DS
 
   pure function F(U,x,mu,nu,definition)
-    real(dp), dimension(2,2) :: F
-    type(SU2) :: top
+    !real(dp), dimension(2,2) :: F
+    type(SU2) :: F, top
     type(SU2), dimension(:,:,:,:,:), intent(in) :: U
     integer(i4), intent(in) :: x(4), mu, nu
     character(*), intent(in) :: definition
-
+    !complex(dp) :: i = (0.0_dp,1.0_dp)
+    
     select case(definition)
     case('plaquette')
-       top = plaquette(U,x,mu,nu)
-       F = aimag(top%matrix)
+       F = plaquette(U,x,mu,nu)
+       !F = aimag(top%matrix)
+       
     case('clover')
        top = clover(U,x,mu,nu)
-       F = aimag(top%matrix)/4.0
+       !F = aimag(top%matrix)/4.0
+       F = (top - dagger(top))/8.0_dp
     end select
   end function F
   
@@ -118,19 +121,24 @@ contains
     real(dp) :: top_den
     integer(i4), dimension(4), intent(in) :: x
     character(*), intent(in) :: definition
-    integer(i4) :: ii !mu, nu, rho, sigma 
+    integer(i4) :: ii, mu, nu, rho, sigma 
     real(dp), dimension(24) :: QQ
     real(dp), parameter :: pi = acos(-1.0_dp)
+    type(SU2) :: clov1, clov2, clov3
     
-    do ii = 1, 24
-       QQ(ii) = levi_civita(id(ii,1),id(ii,2),id(ii,3),id(ii,4)) *  &
-               tr( F(U,x,id(ii,1),id(ii,2),definition) * F(U,x,id(ii,3),id(ii,4),definition) )
-    end do
-    !forall(mu = 1:4, nu = 1:4, rho=1:4, sigma=1:4, levi_civita(mu,nu,rho,sigma) /= 0)
-    !   QQ(mu,nu,rho,sigma) = levi_civita(mu,nu,rho,sigma)*tr(F(U,x,mu,nu,definition)*F(U,x,rho,sigma,definition))
-    !end forall
+    mu    = 1
+    nu    = 2
+    rho   = 3
+    sigma = 4
+    clov1 = clover(U,x,rho,sigma)
+    clov2 = clover(U,x,nu ,sigma)
+    clov3 = clover(U,x,nu ,rho  )
+    top_den = real(tr( clover(U,x,mu,nu )   * (clov1 - dagger(clov1)) )) &
+             -real(tr( clover(U,x,mu,rho)   * (clov2 - dagger(clov2)) )) &
+             +real(tr( clover(U,x,mu,sigma) * (clov3 - dagger(clov3)) ))  
+    
         
-    top_den = sum(QQ)/(32*pi**2)
+    !top_den = -top_den/(128*pi**2)
   end function top_den
   
   pure function topological_charge(U,definition)
@@ -139,7 +147,7 @@ contains
     character(*), intent(in) :: definition
     integer(i4) :: x, y, z, t
     real(dp) :: topological_charge
-
+    real(dp), parameter :: pi = acos(-1.0_dp)
     topological_charge = 0.0_dp
     do x = 1, L
        do y = 1, L
@@ -150,7 +158,7 @@ contains
           end do
        end do
     end do
-                       
+    topological_charge = -topological_charge/(128*pi**2)                  
   end function topological_charge
 
 end module observables

@@ -23,18 +23,24 @@ program SU2_4d
                          //trim(int2str(Lt))//'_'//trim(algorithm)//'.dat'&
                          ,status = 'unknown')
 
-  open(unit = 200, file = 'data/'//trim(int2str(L))//trim(smoothing_method)//'_hot.dat', status = 'unknown')
+  open(unit = 200, file = 'data/'//trim(int2str(L))//trim(smoothing_method)//'.dat', status = 'unknown')
   open(newunit = out_smooth_history, file = 'data/'//trim(int2str(L))// &
-       trim(smoothing_method)//'_history_hot.dat', status = 'unknown')
+       trim(smoothing_method)//'_history.dat', status = 'unknown')
 
+  call hot_start(U)
+  print*, U(1,1,1,1,1)
+  print*, dagger(U(1,1,1,1,1))
+  print*, (U(1,1,1,1,1) - dagger(U(1,1,1,1,1)))/2.0_dp
+  print*, aimag(U(1,1,1,1,1)%matrix)
   call cpu_time(t1)
+  !go to 200
   do i_b =1, size(beta)
      do i = 1, N_measurements
         call hot_start(U)
-        !call thermalization(U,beta(i_b))
+        call thermalization(U,beta(i_b))
         Eden(i,0) = E(U,'plaquette')
         P(i,0) =  plaquette_value(U)
-        q_den(i,0) =  topological_charge(U,'plaquette')
+        q_den(i,0) =  topological_charge(U,'clover')
         call smooth_configuration(U,beta(i_b),n_time,eden(i,:),P(i,:),q_den(i,:),smoothing_method,out_smooth_history)
      end do
      do i_t = 0, n_time
@@ -44,7 +50,7 @@ program SU2_4d
         write(200,*) i_t,avr_P,err_P,avr_qden,err_Qden,avr_eden,err_eden
      end do
   end do
-  call cpu_time(t2)
+  200 call cpu_time(t2)
   write(out_smooth_history,*) "Time : ", t2-t1 , "secs" 
   !print*, 'se acabó'
    

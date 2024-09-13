@@ -52,13 +52,13 @@ contains
     integer(i4), intent(in) :: out_smooth 
     integer(i4) :: i_t
 
-    write(out_smooth,*) 0, P(0), q_den(0), topological_charge(U,'clover'),Eden(0),  E(U,'clover')
+    write(out_smooth,*) 0, P(0), q_den(0)
     do i_t = 1, N_time
        call sweeps(U,beta,trim(smoothing_method))
-       Eden(i_t) = E(U,'plaquette')
+       Eden(i_t) = 0.0_dp!E(U,'clover')
        P(i_t) =  plaquette_value(U)
-       q_den(i_t) =  topological_charge(U,'plaquette')
-       write(out_smooth,*) i_t, P(i_t), q_den(i_t),topological_charge(U,'clover'), Eden(i_t),E(U,'clover')
+       q_den(i_t) =  topological_charge(U,'clover')
+       write(out_smooth,*) i_t, P(i_t), q_den(i_t)
        flush(out_smooth)
     end do
     write(out_smooth,'(a)') ' ', ' ', ' '
