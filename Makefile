@@ -8,7 +8,7 @@ SRC = src
 #FFLAGS = -Wall -Wextra -fcheck=all -O0 -std=f2008
 FFLAGS = -O3
 
-SOURCE = statistics.f90 precision.f90 parameters.f90 number2string_mod.f90 check_files_directories_mod.f90 create_files.f90 pbc.f90 datatypes.f90 starts.f90 arrays.f90 wilson_loops.f90 smooth_configurations.f90 observables.f90 local_update_algorithms.f90 dynamics.f90 main.f90
+SOURCE = progress_bar.f90 statistics.f90 precision.f90 parameters.f90 number2string_mod.f90 check_files_directories_mod.f90 create_files.f90 pbc.f90 datatypes.f90 starts.f90 arrays.f90 wilson_loops.f90 smooth_configurations.f90 observables.f90 local_update_algorithms.f90 dynamics.f90 main.f90
 
 
 OBJECT = $(patsubst %, $(BIN)/%, $(SOURCE:.f90=.o) )

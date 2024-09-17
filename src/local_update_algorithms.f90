@@ -8,7 +8,7 @@ module local_update_algorithms
   
 contains
 
-    subroutine metropolis(U,x,mu,beta)
+  subroutine metropolis(U,x,mu,beta)
     type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
     integer(i4) :: x(4), mu
     real(dp), intent(in) :: beta

@@ -24,15 +24,15 @@ program SU2_4d
   call create_one()
   call set_periodic_bounds(L,Lt)
 
-  go to 200
+  !go to 200
   
   open(unit = 10, file = 'data/Lx='//trim(int2str(L))//'_Lt='&
                          //trim(int2str(Lt))//'_'//trim(algorithm)//'.dat'&
                          ,status = 'unknown')
 
-  open(unit = 200, file = 'data/'//trim(int2str(L))//trim(smoothing_method)//'_2.dat', status = 'unknown')
+  open(unit = 200, file = 'data/'//trim(int2str(L))//trim(smoothing_method)//'.dat', status = 'unknown')
   open(newunit = out_smooth_history, file = 'data/'//trim(int2str(L))// &
-       trim(smoothing_method)//'_history_2.dat', status = 'unknown')
+       trim(smoothing_method)//'_history.dat', status = 'unknown')
 
   call hot_start(U)
   print*, U(1,1,1,1,1)
@@ -43,6 +43,7 @@ program SU2_4d
  
   do i_b =1, size(beta)
      do i = 1, N_measurements
+        call progress_bar(i/real(N_measurements))
         call hot_start(U)
         call thermalization(U,beta(i_b))
         Eden(i,0) = E(U,'plaquette')

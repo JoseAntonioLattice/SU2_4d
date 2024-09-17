@@ -126,10 +126,10 @@ contains
     clov1 = clover(U,x,rho,sigma)
     clov2 = clover(U,x,nu ,sigma)
     clov3 = clover(U,x,nu ,rho  )
-    top_den = real(tr( clover(U,x,mu,nu )   * (clov1 - dagger(clov1)) )) &
-             -real(tr( clover(U,x,mu,rho)   * (clov2 - dagger(clov2)) )) &
-             +real(tr( clover(U,x,mu,sigma) * (clov3 - dagger(clov3)) ))  
-
+    top_den = tr( clover(U,x,mu,nu )   * (clov1 - dagger(clov1)) ) &
+             -tr( clover(U,x,mu,rho)   * (clov2 - dagger(clov2)) ) &
+             +tr( clover(U,x,mu,sigma) * (clov3 - dagger(clov3)) )  
+            
   end function top_den
   
   pure function topological_charge(U)
