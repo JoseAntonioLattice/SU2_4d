@@ -10,7 +10,7 @@ contains
 
   subroutine metropolis(U,x,mu,beta)
     type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
-    integer(i4) :: x(4), mu
+    integer(i4), intent(in) :: x(4), mu
     real(dp), intent(in) :: beta
     type(SU2) :: Up
     real(dp) :: r, prob, DeltaS
@@ -25,9 +25,8 @@ contains
   end subroutine metropolis
 
   subroutine heatbath(U,x,mu,beta)
-    use parameters, only : L, Lt
-    type(SU2), dimension(4,L,L,L,Lt), intent(inout) :: U
-    integer(i4), intent(in) :: mu, x(4)
+    type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
+    integer(i4), intent(in) :: x(4), mu
     real(dp), intent(in) :: beta
     type(SU2) :: sigma,V,Xmat
     real(dp) :: alpha
@@ -70,10 +69,10 @@ contains
 
   subroutine overrelaxation(U,x,mu)
     type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
-    integer(i4), intent(in) :: mu, x(4)
+    integer(i4), intent(in) :: x(4), mu
     type(SU2) :: sigma,V
     real(dp) :: alpha
-
+    
     sigma = staples(U,x,mu)
     alpha = sqrt(det(sigma))
     V = sigma/alpha

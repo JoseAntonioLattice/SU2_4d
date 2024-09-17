@@ -5,7 +5,6 @@ subroutine progress_bar(r)
   real, intent(in) :: r 
   cr = char(13)
 
-  write(outunit, '(a)') 'Progress :'
-  write(outunit,'("Progress: ",a,f5.1,"%")',advance = 'no') cr,r*100
+  write(outunit,'("Progress: ",2a,f5.1,"%")',advance = 'no') cr,"Progress: ",r*100
   
 end subroutine progress_bar

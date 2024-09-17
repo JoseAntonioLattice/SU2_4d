@@ -2,7 +2,19 @@ module observables
   use precision
   use datatypes, id => levi_civita_indices 
   use wilson_loops
+
   implicit none
+
+  abstract interface
+     pure function top_char_den_function(U,x)
+       use precision
+       use datatypes
+       type(SU2), dimension(:,:,:,:,:), intent(in) :: U
+       integer(i4), dimension(4), intent(in) :: x
+       real(dp) :: top_char_den_function
+     end function top_char_den_function
+  end interface
+  
 contains
 
   pure function plaquette_value(U) result(P)
@@ -16,7 +28,7 @@ contains
     P = 0.0_dp
     do x1 = 1, L
        do x2 = 1, L
-          do x3 =1, L
+          do x3 = 1, L
              do x4 = 1, Lt
                 do mu = 1, d - 1
                    do nu = mu + 1, d
@@ -68,26 +80,6 @@ contains
     DS = -(beta/N)*real( tr( (Up - U(mu,x(1),x(2),x(3),x(4))) * dagger(staples(U,[x(1),x(2),x(3),x(4)],mu)) ))
 
   end function DS
-
-  pure function F(U,x,mu,nu,definition)
-    !real(dp), dimension(2,2) :: F
-    type(SU2) :: F, top
-    type(SU2), dimension(:,:,:,:,:), intent(in) :: U
-    integer(i4), intent(in) :: x(4), mu, nu
-    character(*), intent(in) :: definition
-    !complex(dp) :: i = (0.0_dp,1.0_dp)
-    
-    select case(definition)
-    case('plaquette')
-       F = plaquette(U,x,mu,nu)
-       !F = aimag(top%matrix)
-       
-    case('clover')
-       top = clover(U,x,mu,nu)
-       !F = aimag(top%matrix)/4.0
-       F = (top - dagger(top))/8.0_dp
-    end select
-  end function F
   
   pure function E(U,definition)
     use parameters, only: d,L,Lt
@@ -105,7 +97,7 @@ contains
                 x = [x1,x2,x3,x4]
                 do mu = 1, d
                    do nu = 1, d
-                      E = E + tr(F(U,x,mu,nu,definition)*F(U,x,mu,nu,definition))
+                      E = E + tr(plaquette(U,x,mu,nu)*plaquette(U,x,mu,nu))
                    end do
                 end do
              end do
@@ -116,39 +108,77 @@ contains
     E = -E/(2*Vol)
   end function E
   
-  pure function top_den(U,x)
+  pure function top_den_clover(U,x)
     type(SU2), dimension(:,:,:,:,:), intent(in) :: U
-    real(dp) :: top_den
     integer(i4), dimension(4), intent(in) :: x
+    real(dp) :: top_den_clover
     type(SU2) :: clov1, clov2, clov3
-    integer(i4), parameter :: mu = 1, nu = 2, rho = 3, sigma = 4
+    integer(i4) :: mu, nu, rho, sigma
+
+    mu = 1; nu = 2; rho = 3; sigma = 4
     
     clov1 = clover(U,x,rho,sigma)
     clov2 = clover(U,x,nu ,sigma)
     clov3 = clover(U,x,nu ,rho  )
-    top_den = tr( clover(U,x,mu,nu )   * (clov1 - dagger(clov1)) ) &
-             -tr( clover(U,x,mu,rho)   * (clov2 - dagger(clov2)) ) &
-             +tr( clover(U,x,mu,sigma) * (clov3 - dagger(clov3)) )  
+    top_den_clover = tr( clover(U,x,mu,nu   ) * (clov1 - dagger(clov1)) ) &
+                    -tr( clover(U,x,mu,rho  ) * (clov2 - dagger(clov2)) ) &
+                    +tr( clover(U,x,mu,sigma) * (clov3 - dagger(clov3)) )  
             
-  end function top_den
+  end function top_den_clover
+
+  pure function top_den_plaquette(U,x)
+    type(SU2), dimension(:,:,:,:,:), intent(in) :: U
+    integer(i4), dimension(4), intent(in) :: x
+    real(dp) :: top_den_plaquette
+    type(SU2) :: clov1, clov2, clov3
+    integer(i4) :: i, mu, nu, rho, sigma
+
+    top_den_plaquette = 0.0_dp
+    do i = 1, 24
+       mu    = id(i,1)
+       nu    = id(i,2)
+       rho   = id(i,3)
+       sigma = id(i,4)
+       top_den_plaquette = top_den_plaquette + levi_civita(mu,nu,rho,sigma) * &
+                           tr(plaquette(U,x,mu,nu)*plaquette(U,x,rho,sigma))
+    end do
+  end function top_den_plaquette
   
-  pure function topological_charge(U)
+  pure function topological_charge(U,definition)
     use parameters, only: L,Lt,d
     type(SU2), dimension(d,L,L,L,Lt), intent(in) :: U
+    character(*), intent(in) :: definition
     integer(i4) :: x, y, z, t
     real(dp) :: topological_charge
     real(dp), parameter :: pi = acos(-1.0_dp)
-    topological_charge = 0.0_dp
+
+    select case(definition)
+    case('plaquette')
+       topological_charge = -sum_topological_charge_density(U,top_den_plaquette)/(32*pi**2)
+    case('clover')
+       topological_charge = -sum_topological_charge_density(U,top_den_clover)/(128*pi**2)
+    end select
+  end function topological_charge
+
+  pure function sum_topological_charge_density(U,tcdf) result(top)
+    use parameters, only: L,Lt,d
+    type(SU2), dimension(d,L,L,L,Lt), intent(in) :: U
+    procedure(top_char_den_function) :: tcdf
+    real(dp) :: top
+    integer(i4) :: x, y, z, t
+    real(dp), dimension(L,L,L,Lt) :: top_char
+
     do x = 1, L
        do y = 1, L
           do z = 1, L
              do t = 1, Lt
-                topological_charge = topological_charge + top_den(U,[x,y,z,t])
+                top_char(x,y,z,t) = tcdf(U,[x,y,z,t])
              end do
           end do
        end do
     end do
-    topological_charge = -topological_charge/(128*pi**2)                  
-  end function topological_charge
-
+    top = sum(top_char)
+    
+  end function sum_topological_charge_density
+  
 end module observables
