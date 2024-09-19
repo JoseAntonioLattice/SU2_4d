@@ -41,7 +41,6 @@ contains
     TA%matrix = V%matrix/2.0_dp - trV/4 * one%matrix
   end function TA
 
-
 end module smooth_configurations
 
   

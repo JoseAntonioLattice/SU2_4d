@@ -1,6 +1,6 @@
 &input_parameters
-L = 8
-Lt = 8
+L = 10
+Lt = 10
 N_thermalization = 100
 N_measurements = 50
 N_skip = 10

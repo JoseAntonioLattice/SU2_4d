@@ -189,7 +189,7 @@ contains
     call zgeev('N', 'V', n, A, lda,eigenv, vl, ldvl, vr, ldvr, WORK, lwork, rwork,INFO)
 
     C%matrix = vr
-    B = one
+    B%matrix = 0.0_dp
     B%matrix(1,1) = exp(eigenv(1))
     B%matrix(2,2) = exp(eigenv(2))
  
@@ -200,7 +200,7 @@ contains
   ! -- Returns the inverse of a general squared matrix A
   function inv(A) result(Ainv)
     implicit none
-    type(SU2)::  A
+    type(SU2), intent(in)::  A
     type(SU2) :: Ainv
     complex(dp)            :: work(2)     ! work array for LAPACK                                                                      
     integer         :: n,info,ipiv(2)     ! pivot indices
