@@ -10,7 +10,7 @@ program SU2_4d
   use observables
   use starts
   use number2string_mod
-
+  use configurations
   implicit none
 
   integer :: i, bins, i_t, i_b
@@ -24,7 +24,11 @@ program SU2_4d
   call create_one()
   call set_periodic_bounds(L,Lt)
 
-  !go to 200
+  call hot_start(U)
+  !call save_configuration(U,beta(1))
+  call read_configuration(U,beta(1),2)
+  print*,U(1,1,1,1,1)
+  go to 200
   
   open(unit = 10, file = 'data/Lx='//trim(int2str(L))//'_Lt='&
                          //trim(int2str(Lt))//'_'//trim(algorithm)//'.dat'&
