@@ -17,11 +17,21 @@ module dynamics
      end subroutine lua
   end interface
 
-  abstract interface
-     subroutine smooth_configuration_function(u,x,mu)
+    abstract interface
+     subroutine lua_nobeta(u,x,mu)
        use precision
        use datatypes
        type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
+       integer(i4), intent(in) :: x(4), mu
+     end subroutine lua_nobeta
+  end interface
+  
+  abstract interface
+     subroutine smooth_configuration_function(U,V,x,mu)
+       use precision
+       use datatypes
+       type(SU2), dimension(:,:,:,:,:), intent(in) :: U
+       type(SU2), dimension(:,:,:,:,:), intent(out) :: V
        integer(i4), intent(in) :: x(4), mu
      end subroutine smooth_configuration_function
   end interface
@@ -73,13 +83,14 @@ contains
     integer(i4), intent(in) :: out_smooth 
     integer(i4) :: i_t
 
-    write(out_smooth,*) 0, P(0), q_den(0), topological_charge(U,'clover')
+    write(out_smooth,*) 0, P(0), q_den(0), topological_charge(U,'clover'), det(U(1,1,1,1,1)), U(1,1,1,1,1)
     do i_t = 1, N_time
        call sweeps(U,beta,trim(smoothing_method))
+       !print*, det(U(1,1,1,1,1))
        Eden(i_t) = 0.0_dp
        P(i_t) =  plaquette_value(U)
        q_den(i_t) =  topological_charge(U,'plaquette')
-       write(out_smooth,*) i_t, P(i_t), q_den(i_t), topological_charge(U,'clover')
+       write(out_smooth,*) i_t, P(i_t), q_den(i_t), topological_charge(U,'clover'), det(U(1,1,1,1,1)), U(1,1,1,1,1)
        flush(out_smooth)
     end do
     write(out_smooth,'(a)') ' ', ' ', ' '
@@ -105,22 +116,43 @@ contains
     end do
   end subroutine sweeps_lua
 
-  subroutine sweeps_scf(U,scf_function)
+    subroutine sweeps_lua_nobeta(U,lua_function)
     use parameters, only : d, L, Lt
     type(SU2), dimension(d,L,L,L,Lt), intent(inout) :: U
-    procedure(smooth_configuration_function) :: scf_function
+    procedure(lua_nobeta) :: lua_function
     integer(i4) :: x1,x2,x3,x4,mu
     do x1 = 1, L
        do x2 = 1, L
           do x3 = 1, L
              do x4 = 1, Lt
                 do mu = 1, d
-                   call scf_function(U,[x1,x2,x3,x4],mu)
+                   call lua_function(U,[x1,x2,x3,x4],mu)
                 end do
              end do
           end do
        end do
     end do
+  end subroutine sweeps_lua_nobeta
+
+  subroutine sweeps_scf(U,scf_function)
+    use parameters, only : d, L, Lt
+    type(SU2), dimension(d,L,L,L,Lt), intent(inout) :: U
+    procedure(smooth_configuration_function) :: scf_function
+    type(SU2), dimension(d,L,L,L,Lt) :: V
+    integer(i4) :: x1,x2,x3,x4,mu
+    do x1 = 1, L
+       do x2 = 1, L
+          do x3 = 1, L
+             do x4 = 1, Lt
+                do mu = 1, d
+                   call scf_function(U,V,[x1,x2,x3,x4],mu)
+                   U(mu,x1,x2,x3,x4) = V(mu,x1,x2,x3,x4) 
+                end do
+             end do
+          end do
+       end do
+    end do
+    !U = V
   end subroutine sweeps_scf
   
   subroutine sweeps(U,beta,algorithm)
@@ -128,18 +160,20 @@ contains
     type(SU2), dimension(d,L,L,L,Lt), intent(inout) :: U
     real(dp), intent(in) :: beta
     character(*), intent(in) :: algorithm  
-
+   
     select case(algorithm)
     case("heatbath")
        call sweeps_lua(U,beta,heatbath)
     case("metropolis")
        call sweeps_lua(U,beta,metropolis)
     case("overrelaxation")
-       call sweeps_scf(U,overrelaxation)
+       call sweeps_lua_nobeta(U,overrelaxation)
     case("gradient_flow")
        call sweeps_scf(U,gradient_flow)
     case("cooling")
        call sweeps_scf(U,cooling)
+    case("ape_smearing")
+       call sweeps_scf(U,ape_smearing)
     end select
     
   end subroutine sweeps

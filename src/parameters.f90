@@ -42,8 +42,10 @@ contains
     if( N_time < 1 ) stop " N_time must be > 0"
     if( dt <= 0.0_dp  ) stop " dt must be > 0"
     if( .not. (algorithm /= 'metropolis' .or. algorithm /= 'heatbath')) stop "algorithm must be 'metropolis' or 'heatbath'"
-    if( .not. (smoothing_method /= 'cooling' .or. smoothing_method /= 'gradient_flow')) &
-         stop "smoothing_method must be 'cooling' or 'gradient_flow'"
+    if( .not. (smoothing_method /= 'cooling' .or. &
+               smoothing_method /= 'gradient_flow' .or. &
+               smoothing_method /= 'ape_smearing' )) &
+         stop "smoothing_method must be 'cooling', 'gradient_flow' or 'ape_smearing'"
     write(*,nml = input_parameters)
 
   end subroutine read_input

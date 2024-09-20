@@ -53,7 +53,7 @@ contains
     do i = 1, n
        dir_name = trim(dir_name)//trim(directory_array(i))//"/"
        call check_directory(trim(dir_name))
-       print*, trim(dir_name)
+       !print*, trim(dir_name)
     end do
     
   end subroutine create_directories

@@ -24,11 +24,11 @@ program SU2_4d
   call create_one()
   call set_periodic_bounds(L,Lt)
 
-  call hot_start(U)
+  !call hot_start(U)
   !call save_configuration(U,beta(1))
-  call read_configuration(U,beta(1),2)
-  print*,U(1,1,1,1,1)
-  go to 200
+  !call read_configuration(U,beta(1),2)
+  !print*,U(1,1,1,1,1)
+  !go to 200
   
   open(unit = 10, file = 'data/Lx='//trim(int2str(L))//'_Lt='&
                          //trim(int2str(Lt))//'_'//trim(algorithm)//'.dat'&
@@ -41,14 +41,17 @@ program SU2_4d
   call cpu_time(t1)
   call progress_bar(0.0)
   do i_b =1, size(beta)
-     do i = 1, N_measurements
-        call hot_start(U)
-        call thermalization(U,beta(i_b))
+     do i = 70, 70!N_measurements
+        call read_configuration(U,beta(i_b),i)
+        !call hot_start(U)
+        !call thermalization(U,beta(i_b))
         Eden(i,0) = E(U,'plaquette')
         P(i,0) =  plaquette_value(U)
         q_den(i,0) =  topological_charge(U,'plaquette')
+        print*, det(U(1,1,1,1,1))
         call smooth_configuration(U,beta(i_b),n_time,eden(i,:),P(i,:),q_den(i,:),smoothing_method,out_smooth_history)
         call progress_bar(i/real(N_measurements))
+        !call save_configuration(U,beta(i_b))
      end do
      do i_t = 0, n_time
         call max_jackknife_error_2(Eden(:,i_t),avr_eden,err_eden,bins)

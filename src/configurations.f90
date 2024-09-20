@@ -23,7 +23,7 @@ contains
     end do
     configurations_file = trim(configurations_file)//"configuration"
     configurations_file = trim(numbered_file(trim(configurations_file),".conf")) 
-    print '(a,i0,a)', "The size of the file is ",4*d*L**3*Lt*16, " bytes."
+    !print '(a,i0,a)', "The size of the file is ",4*d*L**3*Lt*16, " bytes."
     open(newunit = configurations_unit, file = trim(configurations_file), form = "unformatted", access = "sequential")
     write(configurations_unit) U
     close(configurations_unit)
@@ -44,7 +44,7 @@ contains
        configurations_file = trim(configurations_file)//trim(directory_array(j))//"/"
     end do
     configurations_file = trim(configurations_file)//"configuration_"//trim(int2str(i))//".conf"
-    print*, trim(configurations_file)
+    !print*, trim(configurations_file)
     open(newunit = configurations_unit, file = trim(configurations_file), form = "unformatted", access = "sequential")
     read(configurations_unit) U
     close(configurations_unit)
