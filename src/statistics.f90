@@ -92,7 +92,7 @@ contains
 
       n = 20!size(array)
 
-      do i = 2, n
+      do i = 4, n
         m = mod(n,i)
         call jackknife(array(m+1:n),average,error,i)
         jackk_error_array(i) = error

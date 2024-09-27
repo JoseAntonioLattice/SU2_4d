@@ -12,56 +12,24 @@ program SU2_4d
   use number2string_mod
   use configurations
   implicit none
-
-  integer :: i, bins, i_t, i_b
-  real(dp) :: t2,t1
-
-
+ 
   call read_input()
-  call read_beta()
+  if (readbeta .eqv. .true.)then
+     call read_beta()
+  else
+     call create_beta_array()
+  end if
+  
   call reserve_memory()
   call create_levicivita()
   call create_one()
   call set_periodic_bounds(L,Lt)
 
-  !call hot_start(U)
-  !call save_configuration(U,beta(1))
-  !call read_configuration(U,beta(1),2)
-  !print*,U(1,1,1,1,1)
-  !go to 200
   
-  open(unit = 10, file = 'data/Lx='//trim(int2str(L))//'_Lt='&
-                         //trim(int2str(Lt))//'_'//trim(algorithm)//'.dat'&
+  open(newunit = master_file_unit, file = 'data/Lx='//trim(int2str(L))//'_Lt='&
+                        //trim(int2str(Lt))//'_'//trim(algorithm)//'.dat'&
                          ,status = 'unknown')
-
-  open(unit = 200, file = 'data/'//trim(int2str(L))//trim(smoothing_method)//'.dat', status = 'unknown')
-  open(newunit = out_smooth_history, file = 'data/'//trim(int2str(L))// &
-       trim(smoothing_method)//'_history.dat', status = 'unknown')
-
-  call cpu_time(t1)
-  call progress_bar(0.0)
-  do i_b =1, size(beta)
-     do i = 70, 70!N_measurements
-        call read_configuration(U,beta(i_b),i)
-        !call hot_start(U)
-        !call thermalization(U,beta(i_b))
-        Eden(i,0) = E(U,'plaquette')
-        P(i,0) =  plaquette_value(U)
-        q_den(i,0) =  topological_charge(U,'plaquette')
-        print*, det(U(1,1,1,1,1))
-        call smooth_configuration(U,beta(i_b),n_time,eden(i,:),P(i,:),q_den(i,:),smoothing_method,out_smooth_history)
-        call progress_bar(i/real(N_measurements))
-        !call save_configuration(U,beta(i_b))
-     end do
-     do i_t = 0, n_time
-        call max_jackknife_error_2(Eden(:,i_t),avr_eden,err_eden,bins)
-        call max_jackknife_error_2(P(:,i_t),avr_P,err_P,bins)
-        call max_jackknife_error_2(Q_den(:,i_t),avr_Qden,err_Qden,bins)
-        write(200,*) i_t,avr_P,err_P,avr_qden,err_Qden,avr_eden,err_eden
-     end do
-  end do
-  deallocate(U,P,Q_den,Eden)
-  call cpu_time(t2)
-  write(out_smooth_history,*) "Time : ", t2-t1 , "secs" 
-  200 print*, "Fin."
+  call simulate_equilibrium(U,beta,master_file_unit,P,Poly,correlation_polyakov_loop)
+  deallocate(U,P,Q_den,Eden,beta)
+  
 end program SU2_4d

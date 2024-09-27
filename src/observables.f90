@@ -180,5 +180,44 @@ contains
     top = sum(top_char)
     
   end function sum_topological_charge_density
+
+  pure function array_polyakov_loop(U)
+    use parameters, only : d, L, Lt
+    real(dp), dimension(L,L,L) :: array_polyakov_loop 
+    type(SU2), dimension(d,L,L,L,Lt), intent(in) :: U
+    integer(i4) :: x, y, z
+
+    do x = 1, L
+       do y = 1, L
+          do z = 1, L
+             array_polyakov_loop(x,y,z) = polyakov_loop(U,[x,y,z])
+          end do
+       end do
+    end do
+    
+  end function array_polyakov_loop
+
+  pure function correlation(array)
+    use parameters, only : L
+    real(dp), dimension(L/2-1) :: correlation
+    real(dp), dimension(L,L,L), intent(in) :: array 
+    real(dp), dimension(L,L,L) :: array_corr
+    integer(i4) :: x, y, z, t, xp, yp, zp 
+
+    do t = 1, L/2 - 1
+       do x = 1, L
+          xp = mod(x+t,L); if(xp == 0) xp = L
+          do y = 1, L
+             yp = mod(y+t,L); if(yp == 0) yp = L
+             do z = 1, L
+                zp = mod(z+t,L); if(zp == 0) zp = L
+                array_corr(x,y,z) = array(x,y,z) * (array(xp,y,z) + array(x,yp,z) + array(x,y,zp))
+             end do
+          end do
+       end do
+       correlation(t) = sum(array_corr)/(3*L**3)
+    end do
+    
+  end function correlation
   
 end module observables

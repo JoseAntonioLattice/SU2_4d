@@ -55,7 +55,7 @@ contains
     staples%matrix = 0.0_dp
     x3 = ip(x,mu) ! x + mu
     do nu = 1, d
-       if( nu == mu) cycle
+       if( nu == mu ) cycle
        x2 = ip( x,nu) ! x + nu
        x4 = im( x,nu) ! x - nu
        x5 = im(x3,nu) ! x + mu + nu
@@ -67,5 +67,20 @@ contains
                            U(nu,x5(1),x5(2),x5(3),x5(4))
     end do
   end function staples
+
+  pure function polyakov_loop(U,x)
+    use parameters, only : Lt
+    type(SU2), dimension(:,:,:,:,:), intent(in) :: U
+    integer(i4), intent(in) :: x(3)
+    real(dp) :: polyakov_loop
+    integer(i4) :: t
+    type(SU2) :: prod
+    
+    prod = U(4,x(1),x(2),x(3),1)
+    do t = 2, Lt
+       prod = prod*U(4,x(1),x(2),x(3),t)
+    end do
+    polyakov_loop = tr(prod)
+  end function polyakov_loop
     
 end module wilson_loops

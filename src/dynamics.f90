@@ -17,7 +17,7 @@ module dynamics
      end subroutine lua
   end interface
 
-    abstract interface
+  abstract interface
      subroutine lua_nobeta(u,x,mu)
        use precision
        use datatypes
@@ -37,6 +37,41 @@ module dynamics
   end interface
   
 contains
+
+  subroutine simulate_equilibrium(U,beta,outunit,P,Poly,correlation_polyakov_loop)
+    use starts
+    use statistics
+    use parameters, only : L,Lt,N_measurements,algorithm
+    type(SU2), dimension(:,:,:,:,:), intent(out) :: U
+    integer(i4), intent(in) :: outunit
+    real(dp), dimension(:), intent(in)  :: beta
+    real(dp), dimension(:), intent(out) :: P
+    real(dp), dimension(:), intent(out) :: Poly
+    real(dp), dimension(:,:), intent(out) :: correlation_polyakov_loop
+    integer(i4) :: i, i_b, i_t
+    real(dp) :: t1, t2, avr_P, err_P
+    
+    call cpu_time(t1)
+    call progress_bar(0.0)
+    call hot_start(U)
+    
+    i_t = 0
+    do i_b = 1, size(beta)
+       do i = 1, N_measurements
+          i_t = i_t + 1
+          call thermalization(U,beta(i_b))
+          call measurements(U,P,Poly,correlation_polyakov_loop,beta(i_b),100)
+          call progress_bar(i_t/real(N_measurements*size(beta)))
+       end do
+       call std_err(P,avr_P,err_P)
+       write(*,*) char(13),beta(i_b), avr_P, err_P
+       write(outunit,*) beta(i_b), avr_P, err_P
+       flush(outunit)
+    end do
+    print*, ''
+    call cpu_time(t2)
+    print*, "Time: ", t2-t1, "secs"
+  end subroutine simulate_equilibrium
   
   subroutine thermalization(U,beta)
     use parameters, only : N_thermalization, algorithm
@@ -50,24 +85,34 @@ contains
     
   end subroutine thermalization
 
-  subroutine measurements(U,beta,P,Q_den, E_den,definition)
-    use parameters, only : N_measurements, N_skip,algorithm
+  subroutine measurements(U,P,Poly,corr_poly,beta,unit)
+    use parameters, only : L, N_measurements, N_skip,algorithm
     type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
     real(dp), intent(in) :: beta
     real(dp), dimension(N_measurements), intent(out) :: P
-    real(dp), dimension(N_measurements), intent(out) :: Q_den
-    real(dp), dimension(N_measurements), intent(out) :: E_den
-    character(*), intent(in) :: definition
+    !real(dp), dimension(N_measurements), intent(out) :: Q_den
+    !real(dp), dimension(N_measurements), intent(out) :: E_den
+    real(dp), dimension(N_measurements,L/2-1), intent(out) :: corr_poly
+    !character(*), intent(in) :: definition
+    integer(i4), intent(in) :: unit
+    real(dp), dimension(N_measurements), intent(out) :: Poly
     integer(i4) :: i_sweeps, i_skip
+    real(dp), dimension(L,L,L) :: poly_array
+    
 
     do i_sweeps = 1, N_measurements
        do i_skip = 1, N_skip
           call sweeps(U,beta,algorithm)
        end do
+       !call fat_temporal_links(U)
+       !do i_skip = 1, 10
+       !   call spatial_ape_smearing(U)
+       !end do
+       poly_array = array_polyakov_loop(U)
+       Poly(i_sweeps) = sum(poly_array)/L**3
        P(i_sweeps) = plaquette_value(U)
-       q_den(i_sweeps) = topological_charge(U,'plaquette')
-       E_den(i_sweeps) = E(U,definition)
-       write(100,*) P(i_sweeps), q_den(i_sweeps), E_den(i_sweeps)
+       corr_poly(i_sweeps,:) = correlation(poly_array)
+       !write(unit,*) P(i_sweeps), Poly(i_sweeps),corr_poly(i_sweeps,:)
     end do
     
   end subroutine measurements
@@ -86,7 +131,6 @@ contains
     write(out_smooth,*) 0, P(0), q_den(0), topological_charge(U,'clover'), det(U(1,1,1,1,1)), U(1,1,1,1,1)
     do i_t = 1, N_time
        call sweeps(U,beta,trim(smoothing_method))
-       !print*, det(U(1,1,1,1,1))
        Eden(i_t) = 0.0_dp
        P(i_t) =  plaquette_value(U)
        q_den(i_t) =  topological_charge(U,'plaquette')
@@ -140,6 +184,7 @@ contains
     procedure(smooth_configuration_function) :: scf_function
     type(SU2), dimension(d,L,L,L,Lt) :: V
     integer(i4) :: x1,x2,x3,x4,mu
+    
     do x1 = 1, L
        do x2 = 1, L
           do x3 = 1, L
@@ -154,6 +199,46 @@ contains
     end do
     !U = V
   end subroutine sweeps_scf
+
+  subroutine fat_temporal_links(U)
+    use parameters, only : d, L, Lt
+    type(SU2), dimension(d,L,L,L,Lt), intent(inout) :: U
+    type(SU2) :: V
+    integer(i4) :: x1,x2,x3,x4,mu
+
+     do x1 = 1, L
+       do x2 = 1, L
+          do x3 = 1, L
+             do x4 = 1, Lt
+                V = staples(U,[x1,x2,x3,x4],4)
+                U(4,x1,x2,x3,x4) = V/det(V) 
+             end do
+          end do
+       end do
+    end do
+
+  end subroutine fat_temporal_links
+
+  subroutine spatial_ape_smearing(U)
+    use parameters, only : d, L, Lt
+    type(SU2), dimension(d,L,L,L,Lt), intent(inout) :: U
+    type(SU2), dimension(d,L,L,L,Lt) :: V
+    integer(i4) :: x1, x2, x3, x4, mu
+    
+    do x1 = 1, L
+       do x2 = 1, L
+          do x3 = 1, L
+             do x4 = 1, Lt
+                do mu = 1, d - 1
+                   call ape_smearing(U,V,[x1,x2,x3,x4],mu)
+                   U(mu,x1,x2,x3,x4) = V(mu,x1,x2,x3,x4)
+                end do
+             end do
+          end do
+       end do
+    end do
+    
+  end subroutine spatial_ape_smearing
   
   subroutine sweeps(U,beta,algorithm)
     use parameters, only : d, L, Lt

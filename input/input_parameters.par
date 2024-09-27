@@ -1,13 +1,26 @@
-&input_parameters
-L = 10
-Lt = 10
-N_thermalization = 500
+&lattice_parameters
+L = 4
+Lt = 4
+/
+
+&measurements_parameters
+N_thermalization = 100
 N_measurements = 100
 N_skip = 10
-N_time = 2000
-dt = 0.01
+/
+
+&algorithm_parameters
+algorithm = 'heatbath' !Choose between "metropolis" or "heatbath"
+/
+
+&beta_parameters
+readbeta = F
 N_beta = 100
 b_array = 0.1, 10.0
-algorithm = 'heatbath' !Choose between "metropolis" or "heatbath"
+/
+
+&smooth_parameters
 smoothing_method = 'ape_smearing' !Choose between "cooling", "gradient_flow" or "ape_smearing"
+N_time = 2000
+dt = 0.01
 /
