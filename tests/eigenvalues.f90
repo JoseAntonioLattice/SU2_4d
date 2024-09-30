@@ -9,7 +9,7 @@ program eigenvalues
   integer, parameter :: ldvr = n
   integer, parameter :: lwork = 2*n
   
-  complex(dp), dimension(n,n) :: A, W, B, C
+  complex(dp), dimension(n,n) :: A, W, B, C, expA, one
   complex(dp), dimension(lwork) :: work
   complex(dp), dimension(n) :: eigenv
   complex(dp), dimension(ldvl,n) :: vl
@@ -17,19 +17,25 @@ program eigenvalues
   real(dp), dimension(2*n) :: rwork
   integer :: info
 
-  W = reshape([1.0_dp,1.0_dp,-1.0_dp,1.0_dp],[2,2])
-  
+  W = reshape([0.0_dp,-2.0_dp,1.0_dp,-3.0_dp],[2,2])
+  one = reshape([1.0_dp,0.0_dp,0.0_dp,1.0_dp],[2,2])
   A = W
   call zgeev('N', 'V', n, A, lda,eigenv, vl, ldvl, vr, ldvr, WORK, lwork, rwork,INFO)
   
   C = vr
   B = 0.0_dp
-  B(1,1) = eigenv(1)
-  B(2,2) = eigenv(2)
+  B(1,1) = exp(eigenv(1))
+  B(2,2) = exp(eigenv(2))
 
-  print*, eigenv
-  print*, C
-  print*, matmul(matmul(C,B),inv(C))
+  !print*, eigenv
+  !print*, C
+  print*, real(matmul(matmul(C,B),inv(C)))
+
+  expA = 1/(eigenv(1) - eigenv(2)) * ( exp(eigenv(1)) * (W - eigenv(2) * one ) &
+        - exp(eigenv(2)) * (W - eigenv(1) * one ))
+  print*, real(expA)
+  print*, 2*exp(-1.0_dp) - exp(-2.0_dp), -2*exp(-1.0_dp) + 2*exp(-2.0_dp),&
+            exp(-1.0_dp) - exp(-2.0_dp), -exp(-1.0_dp) + 2*exp(-2.0_dp)
 
 contains
   ! -- Returns the inverse of a general squared matrix A
@@ -53,5 +59,6 @@ contains
     call zGETRI(n,Ainv,n,ipiv,work,n,info)
     if (info.ne.0) stop 'Matrix inversion failed!'
   end function inv
+
   
 end program eigenvalues

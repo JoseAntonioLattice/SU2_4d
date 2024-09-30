@@ -186,14 +186,17 @@ contains
     integer :: info
 
     A = W%matrix
-    call zgeev('N', 'V', n, A, lda,eigenv, vl, ldvl, vr, ldvr, WORK, lwork, rwork,INFO)
+    call zgeev('N', 'N', n, A, lda,eigenv, vl, ldvl, vr, ldvr, WORK, lwork, rwork,INFO)
 
-    C%matrix = vr
-    B%matrix = 0.0_dp
-    B%matrix(1,1) = exp(eigenv(1))
-    B%matrix(2,2) = exp(eigenv(2))
+    !C%matrix = vr
+    !B%matrix = 0.0_dp
+    !B%matrix(1,1) = exp(eigenv(1))
+    !B%matrix(2,2) = exp(eigenv(2))
  
-    res = C*B*inv(C)
+    !res = C*B*inv(C)
+    res%matrix = 1/(eigenv(1) - eigenv(2)) * &
+         ( exp(eigenv(1)) * (W%matrix - eigenv(2) * one%matrix ) &
+         - exp(eigenv(2)) * (W%matrix - eigenv(1) * one%matrix ))
 
   end function mat_exp
 

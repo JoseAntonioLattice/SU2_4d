@@ -73,13 +73,17 @@ contains
     print*, "Time: ", t2-t1, "secs"
   end subroutine simulate_equilibrium
   
-  subroutine thermalization(U,beta)
+  subroutine thermalization(U,beta,steps)
     use parameters, only : N_thermalization, algorithm
     type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
     real(dp), intent(in) :: beta
-    integer(i4) :: i_sweeps
+    integer(i4), optional :: steps
+    integer(i4) :: i_sweeps, nsteps
 
-    do i_sweeps = 1, N_thermalization
+    nsteps = N_thermalization
+    if( present(steps) ) nsteps = steps
+   
+    do i_sweeps = 1, nsteps
        call sweeps(U,beta, algorithm)
     end do
     
@@ -104,10 +108,6 @@ contains
        do i_skip = 1, N_skip
           call sweeps(U,beta,algorithm)
        end do
-       !call fat_temporal_links(U)
-       !do i_skip = 1, 10
-       !   call spatial_ape_smearing(U)
-       !end do
        poly_array = array_polyakov_loop(U)
        Poly(i_sweeps) = sum(poly_array)/L**3
        P(i_sweeps) = plaquette_value(U)
@@ -117,30 +117,26 @@ contains
     
   end subroutine measurements
 
-  subroutine smooth_configuration(U,beta,n_time,eden,P,q_den,smoothing_method,out_smooth)
+  subroutine smooth_configuration(U,beta,n_time,smoothing_method,out_smooth)
     type(SU2), dimension(:,:,:,:,:), intent(inout) :: U
     real(dp), intent(in) :: beta
     integer(i4), intent(in) :: n_time
-    real(dp), dimension(0:), intent(inout) :: P
-    real(dp), dimension(0:), intent(inout) :: Q_den
-    real(dp), dimension(0:), intent(inout) :: Eden
     character(*), intent(in) :: smoothing_method
     integer(i4), intent(in) :: out_smooth 
     integer(i4) :: i_t
 
-    write(out_smooth,*) 0, P(0), q_den(0), topological_charge(U,'clover'), det(U(1,1,1,1,1)), U(1,1,1,1,1)
+    write(out_smooth,*) 0,plaquette_value(U) , topological_charge(U,'plaquette'),&
+                        topological_charge(U,'clover'), det(U(1,1,1,1,1)), U(1,1,1,1,1)
     do i_t = 1, N_time
        call sweeps(U,beta,trim(smoothing_method))
-       Eden(i_t) = 0.0_dp
-       P(i_t) =  plaquette_value(U)
-       q_den(i_t) =  topological_charge(U,'plaquette')
-       write(out_smooth,*) i_t, P(i_t), q_den(i_t), topological_charge(U,'clover'), det(U(1,1,1,1,1)), U(1,1,1,1,1)
+       write(out_smooth,*) i_t,plaquette_value(U) , topological_charge(U,'plaquette'),&
+                           topological_charge(U,'clover'), det(U(1,1,1,1,1)), U(1,1,1,1,1)
        flush(out_smooth)
     end do
     write(out_smooth,'(a)') ' ', ' ', ' '
 
   end subroutine smooth_configuration
-  
+
   subroutine sweeps_lua(U,beta,lua_function)
     use parameters, only : d, L, Lt
     type(SU2), dimension(d,L,L,L,Lt), intent(inout) :: U
