@@ -4,26 +4,185 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{graphicx}
+
+%matrix one
+\usepackage{dsfont}
 \author{José Antonio García Hernández}
-\title{4 d SU(2) lattice gauge theory}
+\title{4-dimensional SU(2) lattice gauge theory}
 \begin{document}
 \maketitle
 
-Clover
+\section{Introduction}
+An SU(2) link variable is defined at a lattice point $x$ in the $\mu$ direction as $U _{\mu}(x)\in \text{SU}(2)$. An element of the group SU(2) is defined as follows
+
+\begin{equation}
+	\label{eq:SU2_element}
+	U = \begin{pmatrix}
+		a & b \\
+		-b^* & a^*
+	\end{pmatrix}
+\end{equation}
+where $a, \ b \in \mathbb{C}$ and $|a|^2 + |b|^2 = 1$.
+
+\subsection{Action}
+In the continuum, the action reads
+\begin{equation}
+	\label{eq:continuum_action}
+	S[A] = \frac{1}{2g^2} \int d^4x \, \text{Tr} \left[ F_{\mu\nu}(x)F_{\mu\nu}(x)\right],
+\end{equation}
+where $F_{\mu\nu}(x)$ is the field strength tensor.
+
+We defined the plaquette variable on the lattice as the ordered product of link variables on the lattice as follows
+\begin{equation}
+	\label{eq:plaquette}
+	U_{\mu\nu}(x) = U_{\mu}(x)U_{\nu}(x+\hat{\mu})U_{\mu}^{\dagger}(x+\hat{\nu})U_{\nu}^{\dagger}(x) 
+\end{equation}
 
 
+On the lattice, the action takes the form
+\begin{equation}
+	\label{eq:wilson_action}
+	S[U] = \frac{\beta}{N}\sum_x \sum_{\mu < \nu} \text{Re}\ \text{Tr} \left[\mathds{1} - U_{\mu\nu}(x) \right],
+\end{equation}
+where $\beta = \frac{2N}{g^2}$.
+
+Sum of plaquette variables
+\begin{equation}
+	\label{eq:Sp}
+	S_{\text{P}} = \frac{1}{N} \sum_x\sum_{\mu < \nu} \text{Re}\ \text{Tr} [U_{\mu\nu}(x)]
+\end{equation}
+we define
+\begin{equation}
+	\label{eq:Ep}
+	E_{\text{P}} =\frac{ \langle S_{\text{P}} \rangle}{D V}
+\end{equation}
+where $V=L^d$ is the volume of the lattice and $D = \frac{d(d-1)}{2}$ is the number of planes of rotation.
+
+Staples
+\begin{equation}
+	\label{eq:staples}
+	\Sigma_{\mu}(x) = \sum_{\nu \neq \mu} \left[ U_{\nu}(x)U_{\mu}(x+\hat{\nu})U_{\nu}^{\dagger}(x+\hat{\mu}) + U_{\nu}^{\dagger}(x-\hat{\nu})U_{\mu}(x-\hat{\nu})U_{\nu}(x+\hat{\mu}-\hat{\nu})\right]
+\end{equation}
+
+
+The change in the action  by a local update when changing $U_{\mu}(x) \to U'_{\mu}(x)$ is
+\begin{equation}
+	\label{eq:DS}
+	\Delta S = -\frac{\beta}{N} \text{Re } \text{Tr} \left[ \left( U'_{\mu}(x) - U_{\mu}(x) \right)\Sigma_{\mu}^{\dagger}\right].
+\end{equation}
+
+\subsection{Field strength tensor}
+
+We can define the field strengh tensor on the lattice with either the \emph{Plaquette} or \emph{Clover} definition. A clover is defined as follows
 \begin{eqnarray}
     Q_{\mu\nu}(x) & = & U_{\mu}(x)U_{\nu}(x+\hat{\mu})U_{\mu}^{-1}(x+\hat{\nu})U_{\nu}^{-1}(x)  +  \nonumber\\
     & & U_{\nu}(x)U_{\mu}^{-1}(x-\hat{\mu}+\hat{\nu})U_{\nu}^{-1}(x-\hat{\mu})U_{\mu}(x-\hat{\mu})  + \nonumber\\ 
     & & U_{\mu}^{-1}(x-\hat{\mu})U_{\nu}^{-1}(x-\hat{\mu}-\hat{\nu})U_{\mu}(x-\hat{\mu}-\hat{\nu})U_{\nu}(x-\hat{\nu})+\nonumber\\
-    &  & U_{\nu}^{-1}(x-\hat{\nu}) U_{\mu}(x-\hat{\nu})U_{\nu}(x+\hat{\mu}-\hat{\nu})U_{\mu}^{-1}(x)
+    &  & U_{\nu}^{-1}(x-\hat{\nu}) U_{\mu}(x-\hat{\nu})U_{\nu}(x+\hat{\mu}-\hat{\nu})U_{\mu}^{-1}(x).
 \end{eqnarray}
 
-Field strength tensor
+Field strength tensor with the plaquette definition
 \begin{equation}
-    \hat{F}_{\mu\nu}(x) = \frac{1}{8}\left[ Q_{\mu\nu}(x) -  Q_{\mu\nu}^{\dagger}(x)\right]
+    F^{\text{plaquette}}_{\mu\nu}(x) = U_{\mu\nu}(x)
 \end{equation}
-\section{Wilson Flow}
+
+Field strength tensor with the clover definition
+\begin{equation}
+    F^{\text{clover}}_{\mu\nu}(x) = \frac{1}{8}\left[ Q_{\mu\nu}(x) -  Q_{\mu\nu}^{\dagger}(x)\right]
+\end{equation}
+
+\subsection{Topological charge}
+The topological charge $Q[U]$ of a configuration $[U]$ is defined as the sum over the lattice of the topological charge density $q(x)$ 
+\begin{equation}
+    q(x) = -\frac{1}{32\pi^2}\varepsilon_{\mu\nu\rho\sigma} \text{Tr} \left\{ F_{\mu\nu}(x)F_{\rho\sigma}(x)\right\}.
+\end{equation}
+Again, we can define the topological charge with the clover or plaquette definitions of $F_{\mu\nu}(x)$. Using the symmetries of the clover definition we can reduce the number of sums to be computed. First, we note that only 24 elements of the Levi-Civita symbol are non-zero. We also note that
+\begin{eqnarray}
+    \varepsilon_{\mu\nu\rho\sigma} \text{Tr} \left\{ F^{\text{clover}}_{\mu\nu}(x)F^{\text{clover}}_{\rho\sigma}(x)\right\} & = & \varepsilon_{\nu\mu\rho\sigma} \text{Tr} \left\{ F^{\text{clover}}_{\nu\mu}(x)F^{\text{clover}}_{\rho\sigma}(x)\right\} \\
+    \varepsilon_{\mu\nu\rho\sigma} \text{Tr} \left\{ F^{\text{clover}}_{\mu\nu}(x)F^{\text{clover}}_{\rho\sigma}(x)\right\} & = & \varepsilon_{\mu\nu\sigma\rho} \text{Tr} \left\{ F^{\text{clover}}_{\mu\nu}(x)F^{\text{clover}}_{\sigma\rho}(x)\right\} \\
+    \varepsilon_{\mu\nu\rho\sigma} \text{Tr} \left\{ F^{\text{clover}}_{\mu\nu}(x)F^{\text{clover}}_{\rho\sigma}(x)\right\} & = & \varepsilon_{\rho\sigma\mu\nu} \text{Tr} \left\{F^{\text{clover}}_{\rho\sigma} (x)F^{\text{clover}}_{\mu\nu}(x)\right\}
+\end{eqnarray} 
+This reduces the number of effective sums by a factor of 8. From the original 24 sums we only need to perform 3.
+
+Using $Q$ instead of $F$ we arrive at
+\begin{equation}
+    \text{Tr}\{F^{\text{clover}}_{\mu\nu}(x)F^{\text{clover}}_{\rho\sigma}(x)\} =\frac{1}{2^5} \text{Tr}\left\{Q_{\mu\nu}(x)[Q_{\rho\sigma}(x)-Q_{\rho\sigma}^{\dagger}(x)]\right\}
+\end{equation}
+We choose the 3 independent permutations of $\varepsilon_{\mu\nu\rho\sigma}$ to be in the indices $[1,2,3,4]$, $[1,3,2,4]$ and $[1,4,2,3]$. Therefore,
+\begin{equation}
+    q^{\text{clover}}(x) = -\frac{1}{128 \pi^2} \sum_{[\mu\nu\rho\sigma] \in\{ [1234], [1324], [1423]\}}
+              \varepsilon_{\mu\nu\rho\sigma}\text{Tr}(Q_{\mu\nu}[Q_{\rho\sigma}-Q_{\rho\sigma}^{\dagger}]) 
+\end{equation}
+
+\section{Local update algorithms}
+
+We implemented three local update algorithms, namely, Metropolis, Glauber and Heathbath.
+
+\subsection{Metropolis}
+\begin{enumerate}
+	\item Given some gauge field configuration, we go through all the lattice points in a lexicographic way. At each point $x$ in the $\mu$ direction we generate a random SU(2) matrix $U'_{\mu}(x)$.
+	
+	\item We compute the sum of the staples and compute the change of the action according to eq.\ \eqref{eq:DS}. We generate a uniform random number $r\in [0,1)$ and accept the change if $r \leq p$, where $p$ is
+	\begin{equation}
+		p = \min (1, \exp(-\Delta S)).
+\end{equation}	 
+\end{enumerate}
+
+\subsection{Glauber}
+\begin{enumerate}
+	\item Given some gauge field configuration, we go through all the lattice points in a lexicographic way. At each point $x$ in the $\mu$ direction we generate a random SU(2) matrix $U'_{\mu}(x)$.
+	
+	\item We compute the sum of the staples and compute the change of the action according to eq.\ \eqref{eq:DS}. We generate a uniform random number $r\in [0,1)$ and accept the change if $r \leq p$, where $p$ is
+	\begin{equation}
+		p = \frac{1}{e^{\Delta S} + 1}.
+\end{equation}	 
+\end{enumerate}
+
+\subsection{Heatbath}\label{sec:heatbath}
+In the heatbath algorithm we need to generate an update $X\in\text{SU}(2)$
+	 \begin{equation}
+	 	X = \begin{pmatrix}
+	 		 x_0 + ix_1 & x_2 + ix_3 \\
+	 		-x_2 + ix_3 & x_0 - ix_3
+	 	\end{pmatrix}
+	 \end{equation}
+	 where $x_0, x_1, x_2,x_3 \in \mathbb{R}$
+ following the distribution
+\begin{equation}
+	dP(X) = \frac{1}{2\pi^2} d\cos\theta\, d\varphi\, dx_0\, \sqrt{1-x_0^2}e^{a\beta x_0}
+\end{equation}
+\begin{enumerate}
+\item Given some field configuration at a point $x$ and direction $\mu$, we compute the sum of staples $\Sigma_{\mu}(x)$ in eq.\ \eqref{eq:staples}, $a = \sqrt{\det \Sigma_{\mu}(x)}$, and define $V = \Sigma_{\mu}(x)/a$
+	\item We generate $X$ as follows:
+	\begin{enumerate}
+	\item	We generate three random numbers $u_i$, $i = 1,\ 2,\ 3$ in the interval [0,1) uniformly distributed and take $r_i = 1 - u_i$. Then
+		 \begin{equation}
+		 	\lambda^2 = -\frac{1}{2a\beta}\left(\log(r_1) + \cos^2(2\pi r_2)\log(r_3)\right).
+		 \end{equation}
+	\item We accept the value of $\lambda$ which obey
+		\begin{equation}
+			s^2 \leq 1- \lambda^2,
+		\end{equation}
+		where $s$ is a uniformly distributed random number in the interval [0,1).
+	\item Repeat the previous two steps until a value of $\lambda$ is accepted. The accepted value gives $x_0 = 1 - 2\lambda^2$
+	\item We take the norm of the vector $\vec{x} = (x_1,x_2,x_3)$ as $|\vec{x}| = \sqrt{1 - x_0^2}$.
+	\item We take two uniformly distributed random numbers $\varphi\in [0,2\pi)$ and $\theta \in [0,\pi)$ and take
+	\begin{eqnarray}
+		x_1 & = & |\vec{x}| \cos\varphi \sin\theta \\
+		x_2 & = & |\vec{x}| \sin\varphi \sin\theta \\
+		x_3 & = & |\vec{x}| \cos\theta	.
+	\end{eqnarray}		
+	  
+	\end{enumerate}
+	\item Once $X$ is generated, the new link variable is $U = X V$
+\end{enumerate}
+
+
+\section{Smoothing procedures}
+
+In order to compute the topological charge, we first need to smooth the configuration. This can be achived by various methods. We describe a few.
+
+\subsection{Gradient Flow}
 \begin{equation}
     \frac{d}{dt}V_{\mu}(x,t) = Z_{\mu}(x,t)V_{\mu}(x,t) , \ \ \  \left. {V_{\mu}(x,t)}\right|_{t = 0} = U_{\mu}(x)
 \end{equation}
@@ -37,22 +196,29 @@ Field strength tensor
 \end{equation}
 
 \begin{equation}
-    V_{\mu}(x,t+\varepsilon) = \exp\{\varepsilon Z_{\mu}(x,t)\}V_{\mu}(x,t)
+    V_{\mu}(x,t+\varepsilon) = \exp\{\varepsilon Z_{\mu}(x,t)\}V_{\mu}(x,t).
 \end{equation}
+%
+%\begin{equation}
+%    E(x,t) = \frac{1}{4} \hat{F}_{\mu\nu}^a(x,t) \hat{F}_{\mu\nu}^a(x,t)
+%\end{equation}    
 
+
+%\begin{equation}
+%    \mathcal{E}(t) = t^2 \langle E(x,t)\rangle
+%\end{equation}
+
+\subsection{Cooling}
+Each link is updated by
 \begin{equation}
-    E(x,t) = \frac{1}{4} \hat{F}_{\mu\nu}^a(x,t) \hat{F}_{\mu\nu}^a(x,t)
+    U_{\mu}'(x) = \frac{\Sigma_{\mu}(x)}{\sqrt{\det \Sigma_{\mu}(x)}}.
 \end{equation}
-
-
-
-
+\subsection{APE smearing}
+Each link is updated by 
 \begin{equation}
-    \mathcal{E}(t) = t^2 \langle E(x,t)\rangle
+    U_{\mu}'(x) = (1-\alpha)U_{\mu}(x)+ \frac{\alpha}{6}\Sigma_{\mu}(x).
 \end{equation}
+with $0<\alpha\leq 0.75$. We chose $\alpha = 0.55$.
 
-\section{Topological charge}
-\begin{equation}
-    q(x,t) = -\frac{1}{32\pi^2}\varepsilon_{\mu\nu\rho\sigma} \text{Tr} \left\{ \hat{F}_{\mu\nu}(x,t)\hat{F}_{\rho\sigma}(x,t)\right\}
-\end{equation}
+\section{Results}
 \end{document}

@@ -50,10 +50,9 @@ contains
     real(dp), parameter :: alpha = 0.4_dp
     real(dp) :: detW
 
-    W = (1.0_dp - alpha) * U(mu,x(1),x(2),x(3),x(4)) + &
-                                 alpha/6 * staples(U,x,mu)
-    detW = det(W)
-    V(mu,x(1),x(2),x(3),x(4)) = W/detW
+    W = (1.0_dp - alpha) * U(mu,x(1),x(2),x(3),x(4)) + alpha/6 * staples(U,x,mu)
+    !detW = det(W)
+    !V(mu,x(1),x(2),x(3),x(4)) = W/detW
   end subroutine ape_smearing
   
   
