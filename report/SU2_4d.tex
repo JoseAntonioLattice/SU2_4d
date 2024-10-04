@@ -149,32 +149,32 @@ In the heatbath algorithm we need to generate an update $X\in\text{SU}(2)$
 	 where $x_0, x_1, x_2,x_3 \in \mathbb{R}$
  following the distribution
 \begin{equation}
-	dP(X) = \frac{1}{2\pi^2} d\cos\theta\, d\varphi\, dx_0\, \sqrt{1-x_0^2}e^{a\beta x_0}
+	dP(X) = \frac{1}{2\pi^2} d\cos\theta\, d\varphi\, dx_0\, \sqrt{1-x_0^2}e^{\alpha\beta x_0}
 \end{equation}
 \begin{enumerate}
-\item Given some field configuration at a point $x$ and direction $\mu$, we compute the sum of staples $\Sigma_{\mu}(x)$ in eq.\ \eqref{eq:staples}, $a = \sqrt{\det \Sigma_{\mu}(x)}$, and define $V = \Sigma_{\mu}(x)/a$
+\item Given some field configuration at a point $x$ and direction $\mu$, we compute the sum of staples $\Sigma_{\mu}(x)$ in eq.\ \eqref{eq:staples}, $\alpha = \sqrt{\det \Sigma_{\mu}(x)}$, and define $V = \Sigma_{\mu}(x)/\alpha$
 	\item We generate $X$ as follows:
 	\begin{enumerate}
 	\item	We generate three random numbers $u_i$, $i = 1,\ 2,\ 3$ in the interval [0,1) uniformly distributed and take $r_i = 1 - u_i$. Then
 		 \begin{equation}
-		 	\lambda^2 = -\frac{1}{2a\beta}\left(\log(r_1) + \cos^2(2\pi r_2)\log(r_3)\right).
+		 	\lambda^2 = -\frac{1}{2\alpha\beta}\left(\log(r_1) + \cos^2(2\pi r_2)\log(r_3)\right).
 		 \end{equation}
 	\item We accept the value of $\lambda$ which obey
 		\begin{equation}
 			s^2 \leq 1- \lambda^2,
 		\end{equation}
 		where $s$ is a uniformly distributed random number in the interval [0,1).
-	\item Repeat the previous two steps until a value of $\lambda$ is accepted. The accepted value gives $x_0 = 1 - 2\lambda^2$
+	\item Repeat the previous two steps until a value of $\lambda$ is accepted. The accepted value gives $x_0 = 1 - 2\lambda^2$.
 	\item We take the norm of the vector $\vec{x} = (x_1,x_2,x_3)$ as $|\vec{x}| = \sqrt{1 - x_0^2}$.
-	\item We take two uniformly distributed random numbers $\varphi\in [0,2\pi)$ and $\theta \in [0,\pi)$ and take
+	\item We take two uniformly distributed random numbers $t \in [0,1)$ and $\varphi\in [0,2\pi)$ 
 	\begin{eqnarray}
-		x_1 & = & |\vec{x}| \cos\varphi \sin\theta \\
-		x_2 & = & |\vec{x}| \sin\varphi \sin\theta \\
-		x_3 & = & |\vec{x}| \cos\theta	.
+		x_1 & = & 1 - 2 t \\
+		x_2 & = & \sqrt{1 - x_1^2} \cos\varphi \\
+		x_3 & = & \sqrt{1 - x_1^2} \sin\varphi	
 	\end{eqnarray}		
 	  
 	\end{enumerate}
-	\item Once $X$ is generated, the new link variable is $U = X V$
+	\item Once $X$ is generated, the new link variable is $U = X V$.
 \end{enumerate}
 
 

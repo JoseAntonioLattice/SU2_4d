@@ -41,13 +41,14 @@ program SU2_4d
   
   !call hot_start(U)
   !call thermalization(U,beta(1))
-  !do i_b = 1, size(beta)
+  do i_b = 1, size(beta)
      do i = 1, N_measurements
-        !call hot_start(U)
-        call read_configuration(U,0.0_dp,i)
+        call hot_start(U)
+        call thermalization(U,beta(i_b),N_thermalization)
+        !call read_configuration(U,0.0_dp,i)
         call smooth_configuration(U,0.0_dp,n_time,smoothing_method,out_smooth_history)
      end do
-  !end do
+  end do
   deallocate(U,P,Q_den,Eden,beta)
   
 end program SU2_4d

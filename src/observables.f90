@@ -54,11 +54,11 @@ contains
     
     do x1 = 1, L
        do x2 = 1, L
-          do x3 =1, L
+          do x3 = 1, L
              do x4 = 1, Lt
                 do mu = 1, d - 1
                    do nu = mu + 1, d
-                      energy_density = energy_density + real(tr(one - plaquette(U,[x1,x2,x3,x4],mu,nu)))
+                      energy_density = energy_density + tr(one - plaquette(U,[x1,x2,x3,x4],mu,nu))
                    end do
                 end do
              end do
@@ -66,7 +66,7 @@ contains
        end do
     end do
     vol = L**3*Lt
-    energy_density = 2*energy_density/vol
+    energy_density = energy_density/(3*vol)
   end function energy_density
   
   pure function DS(U,Up,x,mu,beta)
@@ -81,11 +81,11 @@ contains
 
   end function DS
   
-  pure function E(U,definition)
+  pure function E(U)
     use parameters, only: d,L,Lt
     real(dp) :: E
     type(SU2), intent(in), dimension(d,L,L,L,Lt) :: U
-    character(*), intent(in) :: definition
+    !character(*), intent(in) :: definition
     integer(i4) :: x1,x2,x3,x4,x(4), mu, nu
     integer(i4) :: Vol
 
@@ -97,7 +97,7 @@ contains
                 x = [x1,x2,x3,x4]
                 do mu = 1, d
                    do nu = 1, d
-                      E = E + tr(plaquette(U,x,mu,nu)*plaquette(U,x,mu,nu))
+                      E = E + tr(F_clover(U,x,mu,nu)*F_clover(U,x,nu,mu))
                    end do
                 end do
              end do
@@ -105,8 +105,20 @@ contains
        end do
     end do
     Vol = L**3*Lt
-    E = -E/(2*Vol)
+    E = -E / 64
+    E = E/(2*Vol)
   end function E
+
+  pure function F_clover(U,x,mu,nu)
+    type(SU2), dimension(:,:,:,:,:), intent(in) :: U
+    integer(i4), dimension(4), intent(in) :: x
+    integer(i4), intent(in) :: mu, nu
+    type(SU2) :: F_clover
+    
+    F_clover = clover(U,x,mu,nu) -  clover(U,x,nu,mu)
+
+  end function F_clover
+
   
   pure function top_den_clover(U,x)
     type(SU2), dimension(:,:,:,:,:), intent(in) :: U

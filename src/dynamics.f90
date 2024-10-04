@@ -126,11 +126,11 @@ contains
     integer(i4) :: i_t
 
     write(out_smooth,*) 0,plaquette_value(U) , topological_charge(U,'plaquette'),&
-                        topological_charge(U,'clover'), det(U(1,1,1,1,1)), U(1,1,1,1,1)
+                        topological_charge(U,'clover'), energy_density(U), E(U)!det(U(1,1,1,1,1)), U(1,1,1,1,1)
     do i_t = 1, N_time
        call sweeps(U,beta,trim(smoothing_method))
        write(out_smooth,*) i_t,plaquette_value(U) , topological_charge(U,'plaquette'),&
-                           topological_charge(U,'clover'), det(U(1,1,1,1,1)), U(1,1,1,1,1)
+                           topological_charge(U,'clover'), energy_density(U), E(U) !det(U(1,1,1,1,1)), U(1,1,1,1,1)
        flush(out_smooth)
     end do
     write(out_smooth,'(a)') ' ', ' ', ' '
@@ -187,13 +187,13 @@ contains
              do x4 = 1, Lt
                 do mu = 1, d
                    call scf_function(U,V,[x1,x2,x3,x4],mu)
-                   U(mu,x1,x2,x3,x4) = V(mu,x1,x2,x3,x4) 
+                   !U(mu,x1,x2,x3,x4) = V(mu,x1,x2,x3,x4) 
                 end do
              end do
           end do
        end do
     end do
-    !U = V
+    U = V
   end subroutine sweeps_scf
 
   subroutine fat_temporal_links(U)
