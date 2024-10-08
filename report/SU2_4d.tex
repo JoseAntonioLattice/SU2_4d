@@ -52,22 +52,22 @@ On the lattice, the action takes the form
 \end{equation}
 where $\beta = \frac{2N}{g^2}$.
 
-
+An important quantity is the sum of the plaquettes
 \begin{equation}
 	\label{eq:Sp}
-	S_{\text{P}} = \frac{1}{N} \sum_x\sum_{\mu < \nu} \text{Re}\ \text{Tr} [U_{\mu\nu}(x)]
+	S_{\text{P}} = \frac{1}{N} \sum_x\sum_{\mu < \nu} \text{Re}\ \text{Tr} [U_{\mu\nu}(x)],
 \end{equation}
-we define
+and we define the plaquette value as
 \begin{equation}
 	\label{eq:Ep}
-	E_{\text{P}} =\frac{ \langle S_{\text{P}} \rangle}{D V}
+	P =\frac{ \langle S_{\text{P}} \rangle}{D V},
 \end{equation}
 where $V=L^d$ is the volume of the lattice and $D = \frac{d(d-1)}{2}$ is the number of planes of rotation.
 
-Staples
+The sum of the staples of a link in the direction $\mu$ is
 \begin{equation}
 	\label{eq:staples}
-	\Sigma_{\mu}(x) = \sum_{\nu \neq \mu} \left[ U_{\nu}(x)U_{\mu}(x+\hat{\nu})U_{\nu}^{\dagger}(x+\hat{\mu}) + U_{\nu}^{\dagger}(x-\hat{\nu})U_{\mu}(x-\hat{\nu})U_{\nu}(x+\hat{\mu}-\hat{\nu})\right]
+	\Sigma_{\mu}(x) = \sum_{\nu \neq \mu} \left[ U_{\nu}(x)U_{\mu}(x+\hat{\nu})U_{\nu}^{\dagger}(x+\hat{\mu}) + U_{\nu}^{\dagger}(x-\hat{\nu})U_{\mu}(x-\hat{\nu})U_{\nu}(x+\hat{\mu}-\hat{\nu})\right].
 \end{equation}
 
 
@@ -116,14 +116,23 @@ We can define the field strengh tensor on the lattice with either the \emph{Plaq
 
 Field strength tensor with the plaquette definition
 \begin{equation}
-    F^{\text{plaquette}}_{\mu\nu}(x) = U_{\mu\nu}(x)
+    F^{\text{plaquette}}_{\mu\nu}(x) = i\left[\mathds{1} - U_{\mu\nu}(x)\right].
 \end{equation}
 
 Field strength tensor with the clover definition
 \begin{equation}
-    F^{\text{clover}}_{\mu\nu}(x) = \frac{1}{8}\left[ Q_{\mu\nu}(x) -  Q_{\mu\nu}^{\dagger}(x)\right]
+    F^{\text{clover}}_{\mu\nu}(x) = \frac{1}{8i}\left[ Q_{\mu\nu}(x) -  Q_{\nu\mu}(x)\right].
 \end{equation}
 
+\subsection{Energy density}
+A possibility of defining the energy density on the lattice is by using the plaquette
+\begin{equation}
+    E = \frac{1}{3V}\sum_{x}\sum_{\mu<\nu} \text{Re}\,\text{Tr} \left[\mathds{1} - U_{\mu\nu}(x) \right],
+\end{equation}
+or by using the more symmetric definition with the clover
+\begin{equation}
+    E = \frac{1}{2V}\sum_x \text{Re}\,\text{Tr}\left[F^{\text{clover}}_{\mu\nu}F^{\text{clover}}_{\nu\mu} \right].
+\end{equation}
 \subsection{Topological charge}
 The topological charge $Q[U]$ of a configuration $[U]$ is defined as the sum over the lattice of the topological charge density $q(x)$ 
 \begin{equation}
@@ -251,17 +260,27 @@ Each link is updated by
 \begin{equation}
     U_{\mu}'(x) = (1-\alpha)U_{\mu}(x)+ \frac{\alpha}{6}\Sigma_{\mu}(x).
 \end{equation}
-with $0<\alpha\leq 0.75$. We chose $\alpha = 0.55$.
+with $0<\alpha\leq 0.75$. Only in SU(2) this update stays in the gauge group. Otherwise we need to project it back to the gauge group.% We chose $\alpha = 0.55$.
 
 \section{Results}
+We present simulation results with 20 configurations of the gauge field at $\beta = 1.95$ and $V = 10^4$. After 100 sweeps of thermalization, we procceed to smooth the configurations applying \emph{cooling} or \emph{Gradient Flow}. Figure \ref{fig:cooling} shows the topological charge vs. the sweeps of cooling over the lattice. We see plateaus of the topological charge that are nearly an of integer value. They are almost an intger when $|Q| \leq 2$. In figure \ref{fig:gradient_flow} we also see plateaus of integer values, they appear when $t>15$. Again, the plateaus are almost an integer when $|Q|\leq 2$.
 \begin{figure}
-\includegraphics[scale=1]{../data/cooling.pdf}
-\caption{Topological charge $Q$ vs. the sweeps of cooling.}
+
+    \includegraphics[scale=1]{../data/cooling.pdf}
+    \caption{Topological charge $Q$ vs. the sweeps of cooling.}
+    \label{fig:cooling}
 \end{figure}
 
 \begin{figure}
-\includegraphics[scale=1]{../data/gradient_flow.pdf}
-\caption{Topological charge $Q$ using gradient flow to smooth the configurations vs. the \emph{Langevin time} $t$. Each colored line represents the evolution of a single configuration with a volume $V = 10^{4}$.}
+    \includegraphics[scale=1]{../data/gradient_flow.pdf}
+    \caption{Topological charge $Q$ using gradient flow to smooth the configurations vs. the \emph{Langevin time} $t$. Each colored line represents the evolution of a single configuration with a volume $V = 10^{4}$.}
+    \label{fig:gradient_flow}
 \end{figure}
 
+\begin{center}
+\begin{figure}
+    \includegraphics[scale=0.5]{../data/energyden.pdf}
+    \caption{$\langle E \rangle t^2$ vs. the Langevin time $t$ using the definitions with the plaquette and the clover.}
+\end{figure}
+\end{center}
 \end{document}
