@@ -34,4 +34,5 @@ clean:
 run:
 	{ echo 'input/input_parameters.par'; echo 'input/beta.in'; } | time $(BIN)/$(TARGET)
 
-
+readme:
+	pandoc -f gfm README.md -o $(BIN)/README.pdf 
