@@ -151,8 +151,8 @@ contains
 
   pure function tr_su2(U)
     type(SU2), intent(in) :: U
-    real(dp) :: tr_su2
-    tr_su2 = 2*real(U%matrix(1,1))
+    complex(dp) :: tr_su2
+    tr_su2 = U%matrix(1,1) + U%matrix(2,2)
   end function tr_su2
 
   pure function tr_re(U)
